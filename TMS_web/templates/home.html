@@ -1,12 +1,25 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <title>Trang chủ TMS</title>
-</head>
-<body>
-    <h1>Trang chủ TMS</h1>
-    <p>Đăng nhập thành công rồi.</p>
-    <p><a href="{% url 'logout' %}">Đăng xuất</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+
+
+{% block title %}TMS Web - Home{% endblock %}
+
+{% block content %}
+<section class="search-card">
+    <h1 class="search-title">Tìm nhanh công cụ / vật tư</h1>
+    <p class="search-sub">Nhập tên công cụ, mã, vị trí… (sau này sẽ đọc dữ liệu từ SQLite3).</p>
+
+    <div class="search-bar-wrapper">
+        <form class="search-bar" action="#" method="get">
+            <span class="search-icon">🔍</span>
+            <input
+                type="text"
+                class="search-input"
+                name="q"
+                placeholder="Ví dụ: Tô vít 4 cạnh, Kìm điện số 7, Ngăn tủ A3…"
+                autocomplete="off"
+            />
+            <button class="search-button" type="submit">Tìm kiếm</button>
+        </form>
+    </div>
+</section>
+{% endblock %}
