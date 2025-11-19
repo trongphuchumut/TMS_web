@@ -1,0 +1,546 @@
+{% extends "base.html" %}
+
+{% block title %}Thông tin Tool tiêu hao{% endblock %}
+
+{% block extra_css %}
+<style>
+  .tool-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 16px 0 32px;
+  }
+
+  /* ========= BREADCRUMB ========= */
+  .tp-breadcrumb {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  .tp-breadcrumb a {
+    color: #4b5563;
+    text-decoration: none;
+  }
+  .tp-breadcrumb span {
+    margin: 0 4px;
+  }
+
+  /* ========= HEADER ========= */
+  .tp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .tp-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tp-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tp-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .tp-tag {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+  }
+  .tp-sub-row {
+    font-size: 13px;
+    color: #4b5563;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+  .tp-badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+  .tp-badge-ok {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+    color: #166534;
+  }
+  .tp-badge-warn {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #854d0e;
+  }
+
+  .tp-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tp-btn {
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+    background: white;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tp-btn-primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  /* ========= CARD ========= */
+  .tp-card,
+  .tp-history-card,
+  .tp-fuzzy-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+  .tp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .tp-card-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .tp-card-sub {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .tp-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    margin-top: 10px;
+  }
+  .tp-info-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .tp-info-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .tp-divider {
+    border-top: 1px dashed #e5e7eb;
+    margin: 10px 0;
+  }
+
+
+
+  .tp-stock-box {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: #eff6ff;
+  }
+  .tp-stock-label {
+    font-size: 12px;
+    color: #1d4ed8;
+  }
+  .tp-stock-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1d4ed8;
+  }
+  .tp-stock-note {
+    font-size: 12px;
+    color: #4b5563;
+  }
+
+  /* ========= LỊCH SỬ SỬ DỤNG / CẤP PHÁT ========= */
+  table.tp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .tp-table th,
+  .tp-table td {
+    padding: 8px;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+  }
+  .tp-table thead {
+    background: #f9fafb;
+  }
+  .tp-chip-ok,
+  .tp-chip-warn {
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-size: 11px;
+  }
+  .tp-chip-ok {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+    color: #166534;
+  }
+  .tp-chip-warn {
+    background: #fef3c7;
+    border-color: #fde047;
+    color: #92400e;
+  }
+
+  /* ========= FUZZY ========= */
+  .tp-fuzzy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 10px;
+  }
+  table.tp-fuzzy-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .tp-fuzzy-table th,
+  .tp-fuzzy-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .tp-fuzzy-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .tp-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .tp-info-grid,
+    .tp-wear-stock,
+    .tp-fuzzy-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tool-page">
+
+  <!-- Breadcrumb -->
+  <div class="tp-breadcrumb">
+    <a href="#">Kho công cụ</a>
+    <span>/</span>
+    <a href="#">Tool tiêu hao</a>
+    <span>/</span>
+    <span>Mũi khoan Ø10</span>
+  </div>
+
+  <!-- Header -->
+  <div class="tp-header">
+    <div class="tp-title-block">
+      <div class="tp-title-row">
+        <div class="tp-title">Mũi khoan Ø10 HSS-Co</div>
+        <div class="tp-tag">Mã tool: DRL-10-2025A</div>
+      </div>
+
+      <div class="tp-sub-row">
+        <div>Loại tool: <strong>Mũi khoan</strong></div>
+        <div>Dòng tool: <strong>Drill</strong></div>
+        <div>Nhà SX: <strong>YAMAWA</strong></div>
+      </div>
+
+      <div class="tp-sub-row">
+        <span class="tp-badge tp-badge-warn">Hao mòn cao – chuẩn bị thay</span>
+        <span class="tp-badge">Đường kính: Ø10 mm</span>
+        <span class="tp-badge">Chiều dài làm việc: 25 mm</span>
+      </div>
+    </div>
+
+    <div class="tp-actions">
+      <button class="tp-btn tp-btn-primary">Cấp tool cho máy</button>
+      <button class="tp-btn">Ghi nhận tiêu hao / hỏng</button>
+      <button class="tp-btn">In tem / QR</button>
+    </div>
+  </div>
+
+  <!-- THÔNG TIN + HAO MÒN + TỒN -->
+  <div class="tp-card">
+    <div class="tp-card-header">
+      <div>
+        <div class="tp-card-title">Thông tin tool tiêu hao</div>
+        <div class="tp-card-sub">Tool dùng 1 chiều: sử dụng xong → bỏ / hủy</div>
+      </div>
+      <span class="tp-tag">ID nội bộ: TOOL-00145</span>
+    </div>
+
+    <div class="tp-info-grid">
+      <div>
+        <div class="tp-info-label">Tên tool</div>
+        <div class="tp-info-value">Mũi khoan Ø10 HSS-Co</div>
+      </div>
+      <div>
+        <div class="tp-info-label">Tiêu chuẩn</div>
+        <div class="tp-info-value">DIN 338</div>
+      </div>
+      <div>
+        <div class="tp-info-label">Model</div>
+        <div class="tp-info-value">HSS-Co10</div>
+      </div>
+      <div>
+        <div class="tp-info-label">Vật liệu cắt phù hợp</div>
+        <div class="tp-info-value">C45, S50C</div>
+      </div>
+    </div>
+
+    <div class="tp-divider"></div>
+
+    <div class="tp-info-grid">
+      <div>
+        <div class="tp-info-label">Số lỗ đã gia công</div>
+        <div class="tp-info-value">1080 / 1500 lỗ (tuổi thọ chuẩn)</div>
+      </div>
+      <div>
+        <div class="tp-info-label">Ngày xuất kho lần đầu</div>
+        <div class="tp-info-value">01/11/2025</div>
+      </div>
+    </div>
+
+    <div class="tp-wear-stock">
+      <!-- Hao mòn -->
+
+      <!-- Tồn kho cùng loại -->
+      <div class="tp-stock-box">
+        <div class="tp-stock-label">Tồn kho cùng loại (mã DRL-10-2025A)</div>
+        <div class="tp-stock-value">12 cái</div>
+        <div class="tp-stock-note">Mức cảnh báo tối thiểu: 8 cái</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LỊCH SỬ CẤP PHÁT & SỬ DỤNG (VÌ KHÔNG TRẢ LẠI) -->
+  <div class="tp-history-card" style="margin-top: 16px;">
+    <div class="tp-card-header">
+      <div>
+        <div class="tp-card-title">Lịch sử cấp phát & sử dụng</div>
+        <div class="tp-card-sub">Tool lấy ra dùng xong là tiêu hao, không nhập trả</div>
+      </div>
+      <div class="tp-card-sub">10 lần cấp phát gần nhất</div>
+    </div>
+
+    <table class="tp-table">
+      <thead>
+        <tr>
+          <th>Ngày</th>
+          <th>Người nhận</th>
+          <th>Máy</th>
+          <th>Số lượng cấp</th>
+          <th>Mục đích / Chi tiết</th>
+          <th>Kết quả sử dụng</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>18/11/2025</td>
+          <td>Trần Văn B</td>
+          <td>CNC-03</td>
+          <td>1 cái</td>
+          <td>Khoan 210 lỗ chi tiết trục C45</td>
+          <td><span class="tp-chip-warn">Mòn nhanh – đề xuất thay</span></td>
+        </tr>
+        <tr>
+          <td>17/11/2025</td>
+          <td>Ngô Văn C</td>
+          <td>CNC-02</td>
+          <td>1 cái</td>
+          <td>Khoan 180 lỗ series S50C</td>
+          <td><span class="tp-chip-ok">Hiệu suất bình thường</span></td>
+        </tr>
+        <tr>
+          <td>16/11/2025</td>
+          <td>Lê Văn D</td>
+          <td>CNC-01</td>
+          <td>1 cái</td>
+          <td>Khoan 150 lỗ chi tiết C45</td>
+          <td><span class="tp-chip-ok">OK – chưa hư</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FUZZY CHO TOOL TIÊU HAO -->
+  <div class="tp-fuzzy-card" style="margin-top: 16px;">
+    <div class="tp-card-header">
+      <div>
+        <div class="tp-card-title">Tiêu chí đánh giá fuzzy cho Tool tiêu hao</div>
+        <div class="tp-card-sub">Phục vụ đề xuất chế độ cắt & thời điểm thay dao</div>
+      </div>
+    </div>
+
+    <div class="tp-fuzzy-grid">
+      <!-- Bảng tiêu chí -->
+      <div>
+        <div class="tp-fuzzy-subtitle">1. Tiêu chí & miền giá trị</div>
+        <table class="tp-fuzzy-table">
+          <thead>
+            <tr>
+              <th>Tiêu chí</th>
+              <th>Ký hiệu</th>
+              <th>Miền</th>
+              <th>Đơn vị</th>
+              <th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Độ mòn dao</td>
+              <td>WEAR</td>
+              <td>[0, 100]</td>
+              <td>%</td>
+              <td>0 = mới, 100 = hỏng</td>
+            </tr>
+            <tr>
+              <td>Độ cứng vật liệu gia công</td>
+              <td>HRC</td>
+              <td>[0, 65]</td>
+              <td>HRC</td>
+              <td>Càng cao → càng mau mòn</td>
+            </tr>
+            <tr>
+              <td>Chiều sâu cắt</td>
+              <td>DOC</td>
+              <td>[0, 5]</td>
+              <td>mm</td>
+              <td>Cắt sâu → tải cắt lớn</td>
+            </tr>
+            <tr>
+              <td>Tốc độ tiến dao</td>
+              <td>F</td>
+              <td>[0, 0.3]</td>
+              <td>mm/vg</td>
+              <td>Feed cao → nhiệt & mòn tăng</td>
+            </tr>
+            <tr>
+              <td>Tốc độ trục chính</td>
+              <td>S</td>
+              <td>[0, 6000]</td>
+              <td>rpm</td>
+              <td>Tốc độ cao → ảnh hưởng bền dao</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Nhãn fuzzy -->
+      <div>
+        <div class="tp-fuzzy-subtitle">2. Nhãn ngôn ngữ fuzzy</div>
+        <table class="tp-fuzzy-table">
+          <thead>
+            <tr>
+              <th>Nhãn</th>
+              <th>Ký hiệu</th>
+              <th>Dùng cho</th>
+              <th>Mô tả</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Rất thấp</td>
+              <td>VL</td>
+              <td>WEAR, DOC</td>
+              <td>Ảnh hưởng rất nhỏ</td>
+            </tr>
+            <tr>
+              <td>Thấp</td>
+              <td>L</td>
+              <td>WEAR, DOC</td>
+              <td>Trong vùng an toàn</td>
+            </tr>
+            <tr>
+              <td>Trung bình</td>
+              <td>M</td>
+              <td>HRC, F, S</td>
+              <td>Ảnh hưởng đáng kể, cần theo dõi</td>
+            </tr>
+            <tr>
+              <td>Cao</td>
+              <td>H</td>
+              <td>WEAR, HRC</td>
+              <td>Dễ gây mẻ dao / gãy dao</td>
+            </tr>
+            <tr>
+              <td>Rất cao</td>
+              <td>VH</td>
+              <td>F, S</td>
+              <td>Nguy cơ phá dao, nên giảm chế độ cắt</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Đánh giá fuzzy mẫu cho tool này -->
+    <div style="margin-top: 14px;">
+      <div class="tp-fuzzy-subtitle">3. Đánh giá fuzzy (mẫu) cho tool hiện tại</div>
+      <table class="tp-fuzzy-table">
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Giá trị</th>
+            <th>Nhãn fuzzy</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>WEAR</td>
+            <td>72%</td>
+            <td>Cao (H)</td>
+            <td>Sát ngưỡng thay dao</td>
+          </tr>
+          <tr>
+            <td>HRC</td>
+            <td>45 HRC</td>
+            <td>Cao (H)</td>
+            <td>Vật liệu cứng, cần điều chỉnh chế độ</td>
+          </tr>
+          <tr>
+            <td>DOC</td>
+            <td>1.2 mm</td>
+            <td>Trung bình (M)</td>
+            <td>Có thể giảm nhẹ để tăng bền dao</td>
+          </tr>
+          <tr>
+            <td>Tiến dao (F)</td>
+            <td>0.15 mm/v</td>
+            <td>Cao (H)</td>
+            <td>Nhiệt cao, mòn mép cắt nhanh</td>
+          </tr>
+          <tr>
+            <td>Tốc độ trục chính (S)</td>
+            <td>3200 rpm</td>
+            <td>Trung bình (M)</td>
+            <td>Giữ được bề mặt ổn</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

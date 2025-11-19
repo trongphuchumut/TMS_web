@@ -286,12 +286,14 @@
 
     {# ==== DASHBOARD DÙNG CHUNG ==== #}
     <nav id="dashboardMenu" class="dashboard-menu">
-        <a href="{% url 'home' %}" class="dashboard-item">Tổng quan</a>
-        <a href="#" class="dashboard-item">Kho công cụ</a>
+        <a href="{% url 'home' %}" class="dashboard-item">Tìm kiếm</a>
+        <a href="{% url 'holder:holder_list' %}" class="dashboard-item">Danh sách holder</a>
+        <a href="#" class="dashboard-item">Danh sách tool</a>
+        <a href="{% url 'kho_cong_cu' %}" class="dashboard-item">Kho công cụ</a>
         <a href="#" class="dashboard-item">Mượn / Trả</a>
         <a href="#" class="dashboard-item">Lịch sử</a>
         <a href="#" class="dashboard-item">Chatbot Fuzzy</a>
-        <a href="#" class="dashboard-item">Cài đặt</a>
+        <a href="#" class="dashboard-item">Quản lý công cụ</a>
     </nav>
 
     <main>

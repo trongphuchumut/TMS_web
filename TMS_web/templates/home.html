@@ -1,25 +1,289 @@
 {% extends "base.html" %}
 
-
 {% block title %}TMS Web - Home{% endblock %}
 
+{% block extra_css %}
+<style>
+  .home-layout {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 16px 0 32px;
+  }
+
+  /* --- SEARCH CARD --- */
+  .search-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 20px 20px 18px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+    margin-bottom: 24px;
+  }
+
+  .search-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+  }
+
+  .search-sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 16px;
+  }
+
+  .search-bar-wrapper {
+    margin-top: 8px;
+  }
+
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f9fafb;
+    border-radius: 999px;
+    padding: 6px 8px 6px 14px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .search-icon {
+    font-size: 16px;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    outline: none;
+    color: #111827;
+  }
+
+  .search-input::placeholder {
+    color: #9ca3af;
+  }
+
+  .search-button {
+    border: none;
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+    color: #ffffff;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.08s ease;
+    white-space: nowrap;
+  }
+
+  .search-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(37, 99, 235, 0.4);
+    opacity: 0.96;
+  }
+
+  .search-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    opacity: 0.9;
+  }
+
+  /* --- SECTION TITLE --- */
+  .section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 12px;
+  }
+
+  /* --- QUICK ACTION --- */
+  .quick-action {
+    margin-bottom: 24px;
+  }
+
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .action-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 14px 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.03);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease;
+    font-size: 13px;
+    color: #111827;
+    text-align: center;
+  }
+
+  .action-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+    border-color: #bfdbfe;
+  }
+
+  .action-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+    color: #2563eb;
+  }
+
+  /* --- TOOL LIST --- */
+  .suggest-tools {
+    margin-bottom: 8px;
+  }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .tool-item {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 12px 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.03);
+  }
+
+  .tool-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+  }
+
+  .tool-desc {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  /* --- RESPONSIVE --- */
+  @media (max-width: 900px) {
+    .action-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tool-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .home-layout {
+      padding: 8px 0 24px;
+    }
+
+    .search-card {
+      padding: 16px 14px 14px;
+    }
+
+    .search-title {
+      font-size: 18px;
+    }
+
+    .action-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .tool-grid {
+      grid-template-columns: 1fr;
+    }
+    .action-grid a {
+  text-decoration: none;
+  color: inherit;
+}
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<section class="search-card">
+<div class="home-layout">
+
+  <section class="search-card">
     <h1 class="search-title">Tìm nhanh công cụ / vật tư</h1>
     <p class="search-sub">Nhập tên công cụ, mã, vị trí… (sau này sẽ đọc dữ liệu từ SQLite3).</p>
 
     <div class="search-bar-wrapper">
-        <form class="search-bar" action="#" method="get">
-            <span class="search-icon">🔍</span>
-            <input
-                type="text"
-                class="search-input"
-                name="q"
-                placeholder="Ví dụ: Tô vít 4 cạnh, Kìm điện số 7, Ngăn tủ A3…"
-                autocomplete="off"
-            />
-            <button class="search-button" type="submit">Tìm kiếm</button>
-        </form>
+      <form class="search-bar" action="#" method="get">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          name="q"
+          placeholder="Ví dụ: Tô vít 4 cạnh, Kìm điện số 7, Ngăn tủ A3…"
+          autocomplete="off"
+        />
+        <button class="search-button" type="submit">Tìm kiếm</button>
+      </form>
     </div>
+  </section>
+
+  <!-- QUICK ACTION -->
+  <section class="quick-action">
+  <h2 class="section-title">Thao tác nhanh</h2>
+
+  <div class="action-grid">
+
+    <a href="{% url 'kho_cong_cu'%}">
+    <div class="action-card">
+      <i class="fa-solid fa-screwdriver-wrench action-icon"></i>
+      <p>Xem kho công cụ</p>
+    </div>
+    </a>
+
+    <div class="action-card">
+      <i class="fa-solid fa-clock-rotate-left action-icon"></i>
+      <p>Lịch sử mượn trả</p>
+    </div>
+
+    <a href="{% url 'holder:holder_create' %}">
+        <div class="action-card">
+      <i class="fa-solid fa-plus action-icon"></i>
+      <p>Thêm holder mới</p>
+    </div>
+    </a>
+
+    <div class="action-card">
+      <i class="fa-solid fa-plus action-icon"></i>
+      <p>Thêm tool mới</p>
+    </div>
+  </div>
 </section>
+
+  <!-- TOOL SUGGEST -->
+  <section class="suggest-tools">
+    <h2 class="section-title">Công cụ thường dùng</h2>
+
+    <div class="tool-grid">
+      <div class="tool-item">
+        <h3 class="tool-name">Tô vít 4 cạnh</h3>
+        <p class="tool-desc">Ngăn tủ: A3 – Số lượng: 12</p>
+      </div>
+
+      <div class="tool-item">
+        <h3 class="tool-name">Kìm điện 7 inch</h3>
+        <p class="tool-desc">Ngăn tủ: B1 – Số lượng: 5</p>
+      </div>
+
+      <div class="tool-item">
+        <h3 class="tool-name">Cờ lê 13–14</h3>
+        <p class="tool-desc">Ngăn tủ: C2 – Số lượng: 8</p>
+      </div>
+    </div>
+  </section>
+
+</div>
 {% endblock %}

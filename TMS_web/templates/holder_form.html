@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+
+{% block title %}Tạo Holder mới{% endblock %}
+
+{% block extra_css %}
+<style>
+  .holder-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 16px 0 32px;
+  }
+
+  .hp-breadcrumb {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  .hp-breadcrumb a {
+    color: #4b5563;
+    text-decoration: none;
+  }
+  .hp-breadcrumb span {
+    margin: 0 4px;
+  }
+
+  .hp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .hp-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hp-main-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .hp-sub-row {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .hp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hp-btn {
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+  .hp-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+
+  .hp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .hp-card,
+  .hp-history-card,
+  .hp-fuzzy-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 16px 16px 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    margin-bottom: 16px;
+  }
+
+  .hp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .hp-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .hp-card-sub {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-divider {
+    border-top: 1px dashed #e5e7eb;
+    margin: 12px 0;
+  }
+
+  /* ===== FORM ELEMENTS ===== */
+  .hp-form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+  }
+  .hp-form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 16px;
+  }
+  .hp-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hp-form-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .hp-form-label span {
+    color: #ef4444;
+    margin-left: 2px;
+  }
+  .hp-form-input,
+  .hp-form-select,
+  .hp-form-textarea {
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #111827;
+    width: 100%;
+  }
+  .hp-form-input:focus,
+  .hp-form-select:focus,
+  .hp-form-textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
+  }
+  .hp-form-textarea {
+    min-height: 70px;
+    resize: vertical;
+  }
+  .hp-form-hint {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  .hp-form-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 900px) {
+    .hp-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .hp-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="holder-page">
+  <!-- Breadcrumb -->
+  <div class="hp-breadcrumb">
+    <a href="#">Kho công cụ</a>
+    <span>/</span>
+    <a href="#">Danh sách Holder</a>
+    <span>/</span>
+    <span>Tạo Holder mới</span>
+  </div>
+
+  <!-- Header -->
+  <div class="hp-header">
+    <div class="hp-title-block">
+      <div class="hp-main-title">Tạo Holder mới</div>
+      <div class="hp-sub-row">
+        Nhập đầy đủ thông tin nhận dạng, thông số kỹ thuật và điều kiện bảo trì cho Holder.
+      </div>
+    </div>
+
+    <div class="hp-actions">
+      <a href="{% url 'holder:holder_profile' %}" class="hp-btn">
+        ⬅ Quay lại danh sách
+      </a>
+    </div>
+  </div>
+
+  <form method="post" action="">
+    {% csrf_token %}
+
+    <!-- LAYOUT 2 CỘT: THÔNG TIN CHUNG & THÔNG SỐ KỸ THUẬT -->
+    <div class="hp-layout">
+      <!-- THÔNG TIN CHUNG -->
+      <div class="hp-card">
+        <div class="hp-card-header">
+          <div>
+            <div class="hp-card-title">Thông tin chung</div>
+            <div class="hp-card-sub">Thông tin nhận dạng và quản lý Holder</div>
+          </div>
+        </div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Tên thiết bị<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="ten_thiet_bi"
+              class="hp-form-input"
+              placeholder="VD: Holder HSK63A ER32 L=100"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Nhóm thiết bị<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="nhom_thiet_bi"
+              class="hp-form-input"
+              placeholder="VD: Holder / Thân dao"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Mã nội bộ / ID<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="ma_noi_bo"
+              class="hp-form-input"
+              placeholder="VD: HLD-0001"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Mã nhà sản xuất<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="ma_nha_sx"
+              class="hp-form-input"
+              placeholder="VD: HSK63A-ER32-100"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Loại Holder
+            </label>
+            <input
+              type="text"
+              name="loai_holder"
+              class="hp-form-input"
+              placeholder="VD: HSK63A ER32"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Số serial</label>
+            <input
+              type="text"
+              name="so_serial"
+              class="hp-form-input"
+              placeholder="VD: SN-2025-001"
+            />
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Nhà sản xuất</label>
+            <input
+              type="text"
+              name="nha_san_xuat"
+              class="hp-form-input"
+              placeholder="VD: SUMITOMO"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Nhà cung cấp</label>
+            <input
+              type="text"
+              name="nha_cung_cap"
+              class="hp-form-input"
+              placeholder="VD: Công ty TNHH ABC"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Người quản lý</label>
+            <input
+              type="text"
+              name="nguoi_quan_ly"
+              class="hp-form-input"
+              placeholder="VD: Nguyễn Văn A"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Trạng thái tài sản</label>
+            <select name="trang_thai_tai_san" class="hp-form-select">
+              <option value="">-- Chọn trạng thái --</option>
+              <option value="dang_su_dung">Đang sử dụng</option>
+              <option value="dang_bao_tri">Đang bảo trì</option>
+              <option value="ngung_su_dung">Ngừng sử dụng</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- THÔNG SỐ KỸ THUẬT & KHO -->
+      <div class="hp-card">
+        <div class="hp-card-header">
+          <div>
+            <div class="hp-card-title">Thông số kỹ thuật & vị trí kho</div>
+            <div class="hp-card-sub">Dùng để chọn tool và quản lý tồn kho</div>
+          </div>
+        </div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Chuẩn gá</label>
+            <input
+              type="text"
+              name="chuan_ga"
+              class="hp-form-input"
+              placeholder="VD: HSK63A"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Loại kẹp</label>
+            <input
+              type="text"
+              name="loai_kep"
+              class="hp-form-input"
+              placeholder="VD: ER32"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Chiều dài làm việc (mm)</label>
+            <input
+              type="number"
+              step="0.01"
+              name="chieu_dai_lam_viec"
+              class="hp-form-input"
+              placeholder="VD: 100"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Đường kính kẹp max (mm)</label>
+            <input
+              type="number"
+              step="0.01"
+              name="duong_kinh_kep_max"
+              class="hp-form-input"
+              placeholder="VD: 20"
+            />
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-3">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Tủ / Kệ</label>
+            <input
+              type="text"
+              name="tu"
+              class="hp-form-input"
+              placeholder="VD: Tủ A3"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Ngăn</label>
+            <input
+              type="text"
+              name="ngan"
+              class="hp-form-input"
+              placeholder="VD: Ngăn 02"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Máy / Line ưu tiên</label>
+            <input
+              type="text"
+              name="may_uu_tien"
+              class="hp-form-input"
+              placeholder="VD: CNC-01, CNC-02"
+            />
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Ngày nhập kho</label>
+            <input
+              type="date"
+              name="ngay_nhap_kho"
+              class="hp-form-input"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Giá trị mua (VND)</label>
+            <input
+              type="number"
+              step="1000"
+              min="0"
+              name="gia_tri_mua"
+              class="hp-form-input"
+              placeholder="VD: 5200000"
+            />
+            <div class="hp-form-hint">Nhập số, hệ thống có thể format lại.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BẢO TRÌ & LỊCH SỬ SỬ DỤNG (THÔNG SỐ HIỆN TẠI) -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Bảo trì & tình trạng hiện tại</div>
+          <div class="hp-card-sub">Thông tin phục vụ bảo trì định kỳ và theo dõi</div>
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Chu kỳ kiểm tra</label>
+          <input
+            type="text"
+            name="chu_ky_kiem_tra"
+            class="hp-form-input"
+            placeholder="VD: 3 tháng / lần"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Lần kiểm tra gần nhất</label>
+          <input
+            type="date"
+            name="lan_kiem_tra_gan_nhat"
+            class="hp-form-input"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Số lần gá / tháo</label>
+          <input
+            type="number"
+            min="0"
+            name="so_lan_ga_thao"
+            class="hp-form-input"
+            placeholder="VD: 128"
+          />
+        </div>
+      </div>
+
+      <div class="hp-form-group" style="margin-top:10px;">
+        <label class="hp-form-label">Đánh giá gần nhất</label>
+        <textarea
+          name="danh_gia_gan_nhat"
+          class="hp-form-textarea"
+          placeholder="VD: Tốt – chưa phát hiện mòn côn / mòn kẹp"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- (OPTIONAL) INPUT CHO FUZZY -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Thông tin fuzzy (nếu nhập tay)</div>
+          <div class="hp-card-sub">
+            Có thể để trống nếu hệ thống tự tính sau khi có dữ liệu sử dụng.
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ cứng vững (CV) /10</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="10"
+            name="cv"
+            class="hp-form-input"
+            placeholder="VD: 8.5"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ chính xác gá kẹp (DX) /10</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="10"
+            name="dx"
+            class="hp-form-input"
+            placeholder="VD: 9.0"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Tình trạng mòn (%)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="100"
+            name="mon"
+            class="hp-form-input"
+            placeholder="VD: 10"
+          />
+        </div>
+      </div>
+
+      <div class="hp-form-grid-2" style="margin-top:10px;">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Tần suất sử dụng (lần/tháng)</label>
+          <input
+            type="number"
+            min="0"
+            name="tan_suat"
+            class="hp-form-input"
+            placeholder="VD: 12"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Chiều dài nhô dao (LD) (mm)</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            name="ld"
+            class="hp-form-input"
+            placeholder="VD: 100"
+          />
+        </div>
+      </div>
+
+      <div class="hp-form-group" style="margin-top:10px;">
+        <label class="hp-form-label">Kết luận fuzzy / khuyến nghị</label>
+        <textarea
+          name="ket_luan_fuzzy"
+          class="hp-form-textarea"
+          placeholder="VD: Holder phù hợp cho chế độ cắt nặng & bán tinh, ưu tiên sử dụng..."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- NÚT LƯU -->
+    <div class="hp-form-actions">
+      <a href="{% url 'holder:holder_profile' %}" class="hp-btn">
+        Hủy
+      </a>
+      <button type="submit" class="hp-btn hp-btn-primary">
+        💾 Lưu Holder
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
