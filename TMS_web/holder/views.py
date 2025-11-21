@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Holder
-
+from tool.models import Tool   # 👈 nhớ import
 
 def holder_profile(request, pk):
     holder = get_object_or_404(Holder, pk=pk)
@@ -9,7 +9,7 @@ def holder_profile(request, pk):
 
 def holder_create(request):
     error = None  # để báo lỗi ra template nếu có
-
+    tool_list = Tool.objects.all()  # 👈 LẤY DANH SÁCH TOOL Ở ĐÂY
     if request.method == "POST":
         data = request.POST
 
@@ -56,6 +56,11 @@ def holder_create(request):
                 ket_luan_fuzzy=data.get("ket_luan_fuzzy") or None,
             )
 
+        # XỬ LÝ TOOL KHUYÊN DÙNG
+          
+        # XỬ LÝ TOOL KHUYÊN DÙNG
+            tool_ids = request.POST.getlist('tool_khuyen_dung')
+            holder.tool_khuyen_dung.set(tool_ids)
             # Vì app_name = "holder" nên phải dùng namespace "holder:"
             # Tạm thời đưa về trang profile chung, sau này bạn làm trang chi tiết thì đổi sau
             return redirect("holder:holder_profile")
@@ -63,8 +68,9 @@ def holder_create(request):
             # return redirect("holder:holder_detail", pk=holder.pk)
 
     # GET hoặc POST có lỗi -> render lại form + lỗi
-    return render(request, "holder_form.html", {"error": error})
-
+    return render(request, "holder_form.html", {
+        "tool_list": tool_list,  # 👈 BẮT BUỘC phải có key này
+    })
 
 def holder_list(request):
     holders = Holder.objects.all()

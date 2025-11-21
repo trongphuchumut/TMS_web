@@ -41,3 +41,17 @@ def contact(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+from tool.models import Tool      # chỉnh lại nếu Tool nằm app khác
+from holder.models import Holder  # chỉnh lại nếu Holder nằm app khác
+
+def borrow_dashboard(request):
+    tools = Tool.objects.all()[:200]
+    holders = Holder.objects.all()[:200]
+
+    context = {
+        "tools": tools,
+        "holders": holders,
+    }
+    return render(request, "borrow_dashboard.html", context)

@@ -27,10 +27,10 @@
 
   .tool-card {
     background: #ffffff;
-    border-radius: 24px;
-    padding: 20px 20px 18px;
+    border-radius: 26px;
+    padding: 26px;
     border: 1px solid #e5e7eb;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
   }
 
   .tool-toolbar {
@@ -47,7 +47,7 @@
     gap: 10px;
   }
   .tool-pill {
-    padding: 4px 10px;
+    padding: 4px 12px;
     border-radius: 999px;
     font-size: 11px;
     text-transform: uppercase;
@@ -85,90 +85,99 @@
   .tool-cabinets {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 18px;
   }
 
+  /* ====== TỦ ====== */
   .cabinet {
-    border-radius: 18px;
-    border: 1px solid #e5e7eb;
-    background: #f9fafb;
-    padding: 12px 12px 10px;
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: #fafafa;
+    padding: 16px 16px 14px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    transition: 0.2s ease;
   }
+
+  /* highlight tủ A */
+  .cabinet.highlight {
+    border-color: #3b82f6;
+    background: #e8f1ff;
+    box-shadow: 0 0 10px rgba(59,130,246,0.25);
+  }
+
   .cabinet-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 13px;
+    font-size: 15px;
   }
   .cabinet-title {
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 17px;
     color: #0f172a;
   }
   .cabinet-meta {
-    font-size: 11px;
+    font-size: 12px;
     color: #9ca3af;
   }
 
   .grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    padding: 6px;
-    border-radius: 14px;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 16px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
   }
 
+  /* ====== NGĂN ====== */
   .cell {
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
     background: #f9fafb;
-    padding: 6px 4px 6px;
+    padding: 10px 6px 12px;
+    height: 110px;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    transition:
-      transform 0.1s ease-out,
-      box-shadow 0.1s ease-out,
-      border-color 0.1s ease-out,
-      background 0.1s ease-out;
+    transition: all 0.15s ease-out;
   }
   .cell:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
     background: #eff6ff;
-    border-color: #bfdbfe;
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+    border-color: #93c5fd;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
   }
 
   .cell-code {
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     text-align: center;
-    color: #1d4ed8;
+    color: #2563eb;
   }
   .cell-name {
-    font-size: 11px;
+    font-size: 13px;
     text-align: center;
-    color: #6b7280;
-    margin-top: 2px;
-    min-height: 26px;
+    color: #374151;
+    margin-top: 4px;
+    min-height: 32px;
   }
   .cell-footer {
     display: flex;
     align-items: center;
     justify-content: center;
     margin-top: 4px;
-    gap: 5px;
+    gap: 6px;
   }
   .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 999px;
   }
   .status-ok   { background: #22c55e; }
@@ -180,6 +189,12 @@
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: #9ca3af;
+  }
+
+  /* highlight hàng cuối (7–9) */
+  .row-last {
+    background: #fff8d8 !important;
+    border-color: #facc15 !important;
   }
 
   /* POPUP */
@@ -197,11 +212,11 @@
   }
   .popup {
     background: #ffffff;
-    border-radius: 18px;
+    border-radius: 20px;
     border: 1px solid #e5e7eb;
-    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
-    padding: 16px 18px 14px;
-    width: 320px;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+    padding: 18px 20px 16px;
+    width: 360px;
     max-width: calc(100% - 40px);
   }
   .popup-top {
@@ -242,7 +257,7 @@
   .popup-name {
     font-size: 14px;
     color: #111827;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
   .popup-status-row {
     display: flex;
@@ -250,6 +265,7 @@
     gap: 8px;
     font-size: 12px;
     color: #4b5563;
+    margin-bottom: 4px;
   }
   .popup-status-dot {
     width: 10px;
@@ -258,6 +274,21 @@
   }
   .popup-status-label {
     font-weight: 500;
+  }
+  .popup-qty {
+    font-size: 12px;
+    color: #4b5563;
+  }
+  .popup-link {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .popup-link a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  .popup-link a:hover {
+    text-decoration: underline;
   }
 
   @media (max-width: 768px) {
@@ -285,16 +316,17 @@
           <span class="dot status-ok"></span><span>Còn trong kho</span>
         </div>
         <div class="tool-filter">
-          <span class="dot status-loan"></span><span>Đang cho mượn</span>
+          <span class="dot status-loan"></span><span>Đang cho mượn (chưa dùng)</span>
         </div>
         <div class="tool-filter">
-          <span class="dot status-error"></span><span>Thiếu / lỗi</span>
+          <span class="dot status-error"></span><span>Hết / thiếu hàng</span>
         </div>
       </div>
     </div>
 
     <div class="tool-cabinets">
-      <div class="cabinet">
+      <!-- Tủ A được highlight -->
+      <div class="cabinet highlight">
         <div class="cabinet-header">
           <div class="cabinet-title">Tủ A</div>
           <div class="cabinet-meta">Ngăn A1 – A9</div>
@@ -336,43 +368,16 @@
       <span class="popup-status-dot" id="popup-status-dot"></span>
       <span class="popup-status-label" id="popup-status-label">Trạng thái</span>
     </div>
+    <div class="popup-qty" id="popup-qty">Số lượng: -</div>
+    <div class="popup-link" id="popup-link"></div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  const itemData = {
-    A1: { name: "Cờ lê 8–24mm",          status: "ok"    },
-    A2: { name: "Bộ tuýp 1/2\"",         status: "ok"    },
-    A3: { name: "Tô vít các loại",       status: "loan"  },
-    A4: { name: "Kìm điện, kìm mỏ quạ",  status: "ok"    },
-    A5: { name: "Máy khoan tay",         status: "loan"  },
-    A6: { name: "Thước kẹp, panme",      status: "ok"    },
-    A7: { name: "Bộ lục giác",           status: "ok"    },
-    A8: { name: "Búa, đục",              status: "ok"    },
-    A9: { name: "Vật tư tổng hợp",       status: "error" },
-
-    B1: { name: "Thiết bị đo điện",      status: "ok"    },
-    B2: { name: "Đồng hồ vạn năng",      status: "ok"    },
-    B3: { name: "Ampe kìm",              status: "loan"  },
-    B4: { name: "Đèn pin kỹ thuật",      status: "ok"    },
-    B5: { name: "Dụng cụ cách điện",     status: "ok"    },
-    B6: { name: "Cầu chì, CB",           status: "ok"    },
-    B7: { name: "Relay, contactor",      status: "ok"    },
-    B8: { name: "Cảm biến",              status: "loan"  },
-    B9: { name: "Dây tín hiệu",          status: "ok"    },
-
-    C1: { name: "Ống, co, phụ kiện",     status: "ok"    },
-    C2: { name: "Van, khớp nối",         status: "ok"    },
-    C3: { name: "Bạc đạn",               status: "ok"    },
-    C4: { name: "Phớt, gioăng",          status: "ok"    },
-    C5: { name: "Bu lông – ốc vít",      status: "ok"    },
-    C6: { name: "Bạc lót",               status: "error" },
-    C7: { name: "Keo, hóa chất",         status: "loan"  },
-    C8: { name: "Băng keo, dây rút",     status: "ok"    },
-    C9: { name: "Dụng cụ dự phòng",      status: "ok"    }
-  };
+  // Lấy dữ liệu đồ vật (tool + holder) từ view
+  const itemData = JSON.parse('{{ items_json|escapejs }}');
 
   function statusClass(status) {
     switch (status) {
@@ -382,11 +387,12 @@
       default:      return "";
     }
   }
+
   function statusText(status) {
     switch (status) {
       case "ok":    return "Còn trong kho";
       case "loan":  return "Đang cho mượn";
-      case "error": return "Thiếu / lỗi";
+      case "error": return "Hết / thiếu hàng";
       default:      return "Không rõ";
     }
   }
@@ -395,12 +401,22 @@
     const container = document.getElementById(containerId);
     for (let i = 1; i <= 9; i++) {
       const code = prefix + i;
-      const data = itemData[code] || { name: "Chưa khai báo", status: "unknown" };
+      const data = itemData[code] || {
+        name: "Chưa khai báo",
+        status: "unknown",
+        qty: null,
+        url: null
+      };
 
       const cell = document.createElement("button");
       cell.type = "button";
       cell.className = "cell";
       cell.dataset.code = code;
+
+      // hàng cuối: 7–9 => thêm class row-last
+      if (i >= 7) {
+        cell.classList.add("row-last");
+      }
 
       const codeEl = document.createElement("div");
       codeEl.className = "cell-code";
@@ -426,7 +442,9 @@
 
       cell.appendChild(footer);
 
-      cell.addEventListener("click", () => openPopup(code, data.name, data.status));
+      cell.addEventListener("click", () =>
+        openPopup(code, data.name, data.status, data.qty, data.url)
+      );
       container.appendChild(cell);
     }
   }
@@ -442,10 +460,13 @@
   const popupName        = document.getElementById("popup-name");
   const popupStatusDot   = document.getElementById("popup-status-dot");
   const popupStatusLabel = document.getElementById("popup-status-label");
+  const popupQty         = document.getElementById("popup-qty");
+  const popupLink        = document.getElementById("popup-link");
 
-  function openPopup(code, name, status) {
+  function openPopup(code, name, status, qty, url) {
     popupCode.textContent = "NGĂN " + code;
     popupName.textContent = name || "Chưa khai báo vật tư";
+
     const color =
       status === "ok"    ? "#22c55e" :
       status === "loan"  ? "#facc15" :
@@ -453,8 +474,22 @@
                             "#9ca3af";
     popupStatusDot.style.background = color;
     popupStatusLabel.textContent = statusText(status);
+
+    if (qty !== null && qty !== undefined && qty !== "") {
+      popupQty.textContent = "Số lượng tồn: " + qty;
+    } else {
+      popupQty.textContent = "Số lượng tồn: -";
+    }
+
+    if (url) {
+      popupLink.innerHTML = '<a href="' + url + '">Xem chi tiết tool</a>';
+    } else {
+      popupLink.innerHTML = "";
+    }
+
     popupBackdrop.classList.add("show");
   }
+
   function closePopup() {
     popupBackdrop.classList.remove("show");
   }

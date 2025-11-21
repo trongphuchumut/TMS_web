@@ -593,6 +593,62 @@
         ></textarea>
       </div>
     </div>
+<!-- TƯƠNG THÍCH & GỢI Ý -->
+<div class="hp-card">
+  <div class="hp-card-header">
+    <div>
+      <div class="hp-card-title">Tương thích & Gợi ý</div>
+      <div class="hp-card-sub">
+        Thiết lập mã nhóm tương thích và chọn các tool khuyên dùng.
+      </div>
+    </div>
+  </div>
+
+  <div class="hp-form-grid-2">
+
+    <!-- MÃ NHÓM TƯƠNG THÍCH -->
+    <div class="hp-form-group">
+      <label class="hp-form-label">
+        Mã nhóm tương thích
+      </label>
+      <input
+        type="text"
+        name="ma_nhom_tuong_thich"
+        class="hp-form-input"
+        placeholder="VD: BT40_ER32_L80 hoặc HSK63A_FaceMill"
+      />
+      <div class="hp-form-hint">
+        Các Holder có cùng mã này được xem là tương đương & có thể thay thế.
+      </div>
+    </div>
+
+    <!-- TOOL KHUYÊN DÙNG -->
+    <div class="hp-form-group">
+      <label class="hp-form-label">
+        Tool tương thích / khuyên dùng
+      </label>
+
+      <select
+        name="tool_khuyen_dung"
+        class="hp-form-select"
+        multiple
+        size="6"
+        style="height:140px;"
+      >
+        {% for tool in tool_list %}
+        <option value="{{ tool.id }}">
+          {{ tool.ten_tool }} ({{ tool.ma_tool }})
+        </option>
+        {% endfor %}
+      </select>
+
+      <div class="hp-form-hint">
+        Giữ Ctrl để chọn nhiều tool tương thích.
+      </div>
+    </div>
+
+  </div>
+</div>
 
     <!-- NÚT LƯU -->
     <div class="hp-form-actions">

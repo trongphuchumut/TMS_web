@@ -9,7 +9,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('contact/', views.contact, name='contact'),
-
+    path("borrow/", views.borrow_dashboard, name="borrow_dashboard"),
     # === QUÊN MẬT KHẨU / RESET MẬT KHẨU ===
     path(
         'password-reset/',

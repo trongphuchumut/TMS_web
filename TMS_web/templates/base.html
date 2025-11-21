@@ -175,7 +175,7 @@
         }
 
         main {
-            max-width: 960px;
+            max-width: 1500px;
             margin: 40px auto;
             padding: 0 16px;
         }
@@ -288,9 +288,9 @@
     <nav id="dashboardMenu" class="dashboard-menu">
         <a href="{% url 'home' %}" class="dashboard-item">Tìm kiếm</a>
         <a href="{% url 'holder:holder_list' %}" class="dashboard-item">Danh sách holder</a>
-        <a href="#" class="dashboard-item">Danh sách tool</a>
-        <a href="{% url 'kho_cong_cu' %}" class="dashboard-item">Kho công cụ</a>
-        <a href="#" class="dashboard-item">Mượn / Trả</a>
+        <a href="{% url 'tool:tool_list' %}" class="dashboard-item">Danh sách tool</a>
+        <a href="{% url 'khocongcu:kho_cong_cu' %}" class="dashboard-item">Kho công cụ</a>
+        <a href="{% url 'borrow_dashboard' %}" class="dashboard-item">Mượn / Trả</a>
         <a href="#" class="dashboard-item">Lịch sử</a>
         <a href="#" class="dashboard-item">Chatbot Fuzzy</a>
         <a href="#" class="dashboard-item">Quản lý công cụ</a>

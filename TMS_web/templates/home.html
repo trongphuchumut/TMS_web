@@ -237,7 +237,7 @@
 
   <div class="action-grid">
 
-    <a href="{% url 'kho_cong_cu'%}">
+    <a href="{% url 'khocongcu:kho_cong_cu'%}">
     <div class="action-card">
       <i class="fa-solid fa-screwdriver-wrench action-icon"></i>
       <p>Xem kho công cụ</p>
@@ -256,10 +256,12 @@
     </div>
     </a>
 
+    <a href="{% url 'tool:tool_create' %}">
     <div class="action-card">
       <i class="fa-solid fa-plus action-icon"></i>
       <p>Thêm tool mới</p>
     </div>
+    </a>
   </div>
 </section>
 

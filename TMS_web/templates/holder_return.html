@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Trả tool - {{ holder.ten_holder }}{% endblock %}
+{% block content %}
+<div style="max-width:1120px;margin:16px auto;">
+  <h2>Trả / đóng phiếu cho holder</h2>
+  <p>Holder: <strong>{{ holder.ma_holder }} - {{ holder.ten_holder }}</strong></p>
+  <p>Sau này sẽ hiển thị các tool đang giữ để chọn trả.</p>
+</div>
+{% endblock %}

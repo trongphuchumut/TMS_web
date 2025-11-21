@@ -1,375 +1,334 @@
 {% extends "base.html" %}
 
-{% block title %}Danh sách công cụ - TMS Web{% endblock %}
+{% block title %}Danh sách Tool tiêu hao - TMS Web{% endblock %}
 
 {% block extra_css %}
 <style>
-  .tool-page {
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 12px 0 24px;
-  }
+/* OVERRIDE main chỉ cho trang này */
+main {
+  max-width: none;
+  width: 100%;
+  margin: 24px auto;
+  padding: 0 32px; /* cho giống header (padding 32px) */
+}
 
-  .tool-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 18px;
-  }
+/* Trang dùng full width bên trong main */
+.holder-page {
+  max-width: none;
+  width: 100%;
+  padding: 16px 0 32px;
+}
 
-  .tool-header-left {
-    flex: 1;
-  }
+/* ===== HEADER ===== */
+.holder-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.holder-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.holder-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.holder-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+.holder-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-outline-sm,
+.btn-primary-sm {
+  border-radius: 999px;
+  font-size: 13px;
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-outline-sm:hover {
+  background: #f9fafb;
+}
+.btn-primary-sm {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.btn-primary-sm:hover {
+  background: #1d4ed8;
+}
 
-  .tool-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-  }
+/* ===== CARD & TABLE ===== */
+.holder-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.05);
+}
 
-  .tool-sub {
-    margin-top: 4px;
-    font-size: 13px;
-    color: #6b7280;
-  }
+.holder-table-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+  overflow-x: auto;
+}
 
-  .tool-header-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
+table.holder-table {
+  width: 100%;
+  padding: 14px 18px;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 860px;
+}
 
-  .btn-primary {
-    border: none;
-    border-radius: 999px;
-    padding: 8px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: linear-gradient(90deg, #3b82f6, #2563eb);
-    color: #fff;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
-    transition: all 0.15s ease;
-  }
+table.holder-table thead {
+  background: #f9fafb;
+}
 
-  .btn-primary:hover {
-    filter: brightness(1.05);
-    transform: translateY(-1px);
-  }
+table.holder-table th {
+  padding: 10px 12px;
+  text-align: left;
+  color: #6b7280;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
 
-  .btn-outline {
-    border-radius: 999px;
-    border: 1px solid #d1d5db;
-    background: #fff;
-    padding: 7px 12px;
-    font-size: 13px;
-    cursor: pointer;
-    color: #374151;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.15s ease;
-  }
+table.holder-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
 
-  .btn-outline:hover {
-    background: #f3f4f6;
-  }
+.holder-name {
+  font-weight: 600;
+  color: #111827;
+}
+.holder-name-sub {
+  font-size: 11px;
+  color: #6b7280;
+}
 
-  .tool-card {
-    background: #ffffff;
-    border-radius: 24px;
-    padding: 18px 18px 14px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
-  }
+.text-muted {
+  color: #9ca3af;
+  font-size: 12px;
+}
 
-  /* Thanh filter & search */
-  .tool-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 14px;
-  }
+/* ===== BADGE TỒN KHO ===== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.status-safe {
+  background: #dcfce7;
+  color: #166534;
+}
+.status-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-empty {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 
-  .search-input-wrapper {
-    flex: 1 1 220px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    padding: 6px 10px;
-    background: #f9fafb;
-  }
+.pill-small {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-size: 11px;
+  color: #4b5563;
+}
 
-  .search-input-wrapper span {
-    font-size: 14px;
-    opacity: 0.7;
-  }
+.table-row-clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.table-row-clickable:hover {
+  background: #f3f4f6;
+}
 
-  .search-input-wrapper input {
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 13px;
-    width: 100%;
-  }
+.main-content {
+  width: 100%;
+  max-width: none;
+  padding-left: 24px;
+  padding-right: 24px;
+}
 
-  .tool-select {
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    padding: 7px 30px 7px 10px;
-    font-size: 13px;
-    background: #fff;
-  }
-
-  .tool-select:focus {
-    outline: none;
-    border-color: #3b82f6;
-  }
-
-  /* Bảng */
-  .tool-table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    border-radius: 18px;
-    border: 1px solid #e5e7eb;
-  }
-
-  table.tool-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    min-width: 800px;
-  }
-
-  .tool-table thead {
-    background: #f9fafb;
-  }
-
-  .tool-table thead th {
-    text-align: left;
-    padding: 10px 12px;
-    font-weight: 600;
-    color: #6b7280;
-    border-bottom: 1px solid #e5e7eb;
-    white-space: nowrap;
-  }
-
-  .tool-table tbody tr:nth-child(even) {
-    background: #f9fafb;
-  }
-
-  .tool-table tbody tr:hover {
-    background: #eff6ff;
-  }
-
-  .tool-table tbody td {
-    padding: 9px 12px;
-    border-bottom: 1px solid #e5e7eb;
-    vertical-align: middle;
-  }
-
-  .tool-name {
-    font-weight: 600;
-    color: #111827;
-  }
-
-  .tool-code {
-    font-family: "Consolas", "SFMono-Regular", monospace;
-    font-size: 12px;
-    padding: 3px 7px;
-    border-radius: 999px;
-    background: #f3f4f6;
-    display: inline-block;
-  }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 500;
-    gap: 4px;
-  }
-
-  .badge-success {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .badge-warning {
-    background: #fef9c3;
-    color: #854d0e;
-  }
-
-  .badge-danger {
-    background: #fee2e2;
-    color: #991b1b;
-  }
-
-  .badge-info {
-    background: #e0f2fe;
-    color: #075985;
-  }
-
-  .tool-qty {
-    font-weight: 600;
-  }
-
-  .tool-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-
-  .tool-actions button {
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    padding: 4px 8px;
-    font-size: 11px;
-    background: #fff;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-
-  .tool-actions button:hover {
-    background: #f3f4f6;
-  }
-
-  .tool-updated {
-    font-size: 11px;
-    color: #6b7280;
-  }
-
-  @media (max-width: 768px) {
-    .tool-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .tool-header-actions {
-      justify-content: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .tool-card {
-      padding: 14px;
-      border-radius: 18px;
-    }
-
-    .tool-table-wrapper {
-      border-radius: 14px;
-    }
-  }
+/* link trong ô chính */
+.row-main-link {
+  text-decoration: none;
+  color: inherit;
+}
+.row-main-link:hover .holder-name {
+  text-decoration: underline;
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="tool-page">
-  <!-- Header -->
-  <div class="tool-header">
-    <div class="tool-header-left">
-      <div class="tool-title">Danh sách công cụ</div>
-      <p class="tool-sub">
-        Theo dõi đầy đủ các công cụ, vật tư đang có trong kho.
+<div class="holder-page">
+  <!-- HEADER -->
+  <div class="holder-header">
+    <div class="holder-header-left">
+      <div class="holder-title">Danh sách Tool tiêu hao</div>
+      <p class="holder-sub">
+        Theo dõi nhanh các tool dùng 1 lần: loại tool, nhà sản xuất, vị trí trong kho và mức tồn hiện tại.
       </p>
     </div>
-    <div class="tool-header-actions">
-      <button class="btn-outline">📥 Xuất Excel</button>
-      <button class="btn-primary">➕ Thêm công cụ</button>
+    <div class="holder-header-actions">
+      <button class="btn-outline-sm" type="button">
+        📥 Xuất Excel
+      </button>
+      <a class="btn-primary-sm" href="{% url 'tool:tool_create' %}">
+        ➕ Thêm Tool tiêu hao
+      </a>
     </div>
   </div>
 
-  <!-- Card -->
-  <div class="tool-card">
-    <form method="get" class="tool-filters">
-
-      <!-- SEARCH -->
-      <div class="search-input-wrapper">
-        <span>🔍</span>
-        <input type="text" name="q" placeholder="Tìm theo tên, mã…" value="{{ request.GET.q }}">
-      </div>
-
-      <!-- FILTER: Holder -->
-      <select name="holder" class="tool-select">
-        <option value="">Tất cả Holder</option>
-        {% for h in holders %}
-        <option value="{{ h.id }}" {% if request.GET.holder == h.id|stringformat:"s" %}selected{% endif %}>
-          {{ h.name }}
-        </option>
-        {% endfor %}
-      </select>
-
-      <!-- FILTER: Status -->
-      <select name="status" class="tool-select">
-        <option value="">Tình trạng: Tất cả</option>
-        <option value="available" {% if request.GET.status == "available" %}selected{% endif %}>Đang rảnh</option>
-        <option value="borrowed" {% if request.GET.status == "borrowed" %}selected{% endif %}>Đang cho mượn</option>
-        <option value="maintenance" {% if request.GET.status == "maintenance" %}selected{% endif %}>Đang bảo trì</option>
-        <option value="lost" {% if request.GET.status == "lost" %}selected{% endif %}>Mất / hỏng</option>
-      </select>
-
-      <button class="btn-outline">Lọc</button>
-    </form>
-
-    <!-- TABLE -->
-    <div class="tool-table-wrapper">
-      <table class="tool-table">
+  <!-- CARD + TABLE -->
+  <div class="holder-card">
+    <div class="holder-table-wrapper">
+      <table class="holder-table">
         <thead>
           <tr>
-            <th>Mã</th>
-            <th>Công cụ</th>
-            <th>Loại</th>
-            <th>Holder</th>
-            <th>Số lượng</th>
-            <th>Trạng thái</th>
-            <th>Cập nhật</th>
-            <th>Thao tác</th>
+            <th>Tool / Mã</th>
+            <th>Nhóm / Dòng tool</th>
+            <th>Kích thước</th>
+            <th>Vị trí (Tủ / Ngăn)</th>
+            <th>Nhà sản xuất</th>
+            <th>Tồn kho</th>
+            <th>Trạng thái tồn kho</th>
+            <th>Ngày nhập</th>
           </tr>
         </thead>
-
         <tbody>
-          {% for tool in tools %}
-          <tr>
-            <td><span class="tool-code">{{ tool.code }}</span></td>
-            <td>{{ tool.name }}</td>
-            <td>{{ tool.category.name }}</td>
-            <td>{{ tool.holder.name }}</td>
-            <td>{{ tool.available_quantity }} / {{ tool.total_quantity }}</td>
+        {% for t in tools %}
+          <tr class="table-row-clickable" data-href="{% url 'tool:tool_profile' t.pk %}">
+
+            <!-- Tên + mã -->
             <td>
-              {% if tool.status == "available" %}
-                <span class="badge badge-success">Đang rảnh</span>
-              {% elif tool.status == "borrowed" %}
-                <span class="badge badge-warning">Đang cho mượn</span>
-              {% elif tool.status == "maintenance" %}
-                <span class="badge badge-info">Đang bảo trì</span>
+              <a href="{% url 'tool:tool_profile' t.pk %}" class="row-main-link">
+                <div class="holder-name">{{ t.ten_tool|default:"(Chưa có tên tool)" }}</div>
+                <div class="holder-name-sub">
+                  Mã tool: <strong>{{ t.ma_tool|default:"-" }}</strong>
+                </div>
+              </a>
+            </td>
+
+            <!-- Nhóm / dòng -->
+            <td>
+              {% if t.nhom_tool %}
+                <div><span class="pill-small">{{ t.nhom_tool }}</span></div>
               {% else %}
-                <span class="badge badge-danger">Mất / hỏng</span>
+                <div><span class="text-muted">Chưa phân nhóm</span></div>
+              {% endif %}
+              {% if t.dong_tool %}
+                <div class="text-muted">Dòng: {{ t.dong_tool }}</div>
               {% endif %}
             </td>
-            <td>{{ tool.updated_at|date:"d/m/Y H:i" }}</td>
+
+            <!-- Kích thước -->
             <td>
-              <div class="tool-actions">
-                <button>Chi tiết</button>
-                <button>Sửa</button>
-                <button>Mượn/Trả</button>
-              </div>
+              {% if t.duong_kinh %}
+                <div>Ø{{ t.duong_kinh }} mm</div>
+              {% endif %}
+              {% if t.chieu_dai_lam_viec %}
+                <div>L = {{ t.chieu_dai_lam_viec }} mm</div>
+              {% endif %}
+              {% if not t.duong_kinh and not t.chieu_dai_lam_viec %}
+                <span class="text-muted">Không rõ</span>
+              {% endif %}
+            </td>
+
+            <!-- Vị trí -->
+            <td>
+              <div><strong>Tủ:</strong> {{ t.tu|default:"-" }}</div>
+              <div><strong>Ngăn:</strong> {{ t.ngan|default:"-" }}</div>
+            </td>
+
+            <!-- Nhà sản xuất -->
+            <td>
+              {{ t.nha_san_xuat|default:"-" }}
+              {% if t.ma_nha_sx %}
+                <div class="text-muted">Mã NSX: {{ t.ma_nha_sx }}</div>
+              {% endif %}
+            </td>
+
+            <!-- Tồn kho -->
+            <td>
+              {% if t.ton_kho is not None %}
+                <strong>{{ t.ton_kho }}</strong> {{ t.don_vi_tinh|default:"" }}
+                {% if t.muc_canh_bao %}
+                  <div class="text-muted">
+                    Cảnh báo: {{ t.muc_canh_bao }} {{ t.don_vi_tinh|default:"" }}
+                  </div>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">Chưa nhập</span>
+              {% endif %}
+            </td>
+
+            <!-- Trạng thái tồn kho -->
+            <td>
+              {% if t.ton_kho == 0 %}
+                <span class="status-badge status-empty">Hết hàng</span>
+              {% elif t.muc_canh_bao and t.ton_kho and t.ton_kho <= t.muc_canh_bao %}
+                <span class="status-badge status-warn">Sắp hết - nên đặt</span>
+              {% else %}
+                <span class="status-badge status-safe">An toàn</span>
+              {% endif %}
+            </td>
+
+            <!-- Ngày nhập -->
+            <td>
+              {% if t.ngay_nhap_kho %}
+                {{ t.ngay_nhap_kho|date:"d/m/Y" }}
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
             </td>
           </tr>
-          {% endfor %}
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align:center;color:#9ca3af;padding:16px;">
+              Chưa có Tool tiêu hao nào trong hệ thống.
+            </td>
+          </tr>
+        {% endfor %}
         </tbody>
-
       </table>
     </div>
   </div>
 </div>
 {% endblock %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".table-row-clickable").forEach(row => {
+      row.addEventListener("click", () => {
+        const url = row.getAttribute("data-href");
+        if (url) window.location.href = url;
+      });
+    });
+  });
+</script>

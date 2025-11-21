@@ -62,6 +62,22 @@ class Holder(models.Model):
     )
     ket_luan_fuzzy = models.TextField(blank=True, null=True)
 
+    # 🔹 TRƯỜNG MỚI 1: DANH SÁCH TOOL TƯƠNG THÍCH / KHUYÊN DÙNG
+    tool_khuyen_dung = models.ManyToManyField(
+        'tool.tool',          # hoặc 'Tool' nếu cùng app
+        blank=True,
+        related_name='holders_khuyen_dung',
+        help_text="Các tool tương thích & khuyên dùng với holder này"
+    )
+
+    # 🔹 TRƯỜNG MỚI 2: MÃ / NHÓM TƯƠNG THÍCH
+    ma_nhom_tuong_thich = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Nếu 2 holder có cùng mã này thì coi như tương thích / thay thế cho nhau"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

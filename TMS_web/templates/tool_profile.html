@@ -4,543 +4,890 @@
 
 {% block extra_css %}
 <style>
-  .tool-page {
+  .holder-page {
     max-width: 1120px;
     margin: 0 auto;
     padding: 16px 0 32px;
   }
 
-  /* ========= BREADCRUMB ========= */
-  .tp-breadcrumb {
+  /* ========= BREADCRUMB & HEADER ========= */
+  .hp-breadcrumb {
     font-size: 13px;
     color: #6b7280;
     margin-bottom: 8px;
   }
-  .tp-breadcrumb a {
+  .hp-breadcrumb a {
     color: #4b5563;
     text-decoration: none;
   }
-  .tp-breadcrumb span {
+  .hp-breadcrumb span {
     margin: 0 4px;
   }
 
-  /* ========= HEADER ========= */
-  .tp-header {
+  .hp-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
     margin-bottom: 16px;
   }
-  .tp-title-block {
+  .hp-title-block {
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
-  .tp-title-row {
+  .hp-main-title-row {
     display: flex;
     align-items: center;
-    gap: 8px;
     flex-wrap: wrap;
+    gap: 8px;
   }
-  .tp-title {
+  .hp-main-title {
     font-size: 22px;
     font-weight: 700;
     color: #0f172a;
   }
-  .tp-tag {
+  .hp-main-code {
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: #eef2ff;
-    border: 1px solid #c7d2fe;
-    color: #3730a3;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
   }
-  .tp-sub-row {
-    font-size: 13px;
-    color: #4b5563;
+
+  .hp-sub-row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px 16px;
+    font-size: 13px;
+    color: #4b5563;
   }
-  .tp-badge {
+
+  .hp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-size: 12px;
     padding: 4px 10px;
     border-radius: 999px;
     border: 1px solid #e5e7eb;
     background: #f9fafb;
+    color: #374151;
   }
-  .tp-badge-ok {
+  .hp-badge-status-ok {
     background: #ecfdf3;
-    border-color: #bbf7d0;
     color: #166534;
+    border-color: #bbf7d0;
   }
-  .tp-badge-warn {
+  .hp-badge-status-warn {
     background: #fef9c3;
-    border-color: #fde047;
     color: #854d0e;
+    border-color: #facc15;
+  }
+  .hp-badge-status-stop {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
   }
 
-  .tp-actions {
+  .hp-actions {
     display: flex;
-    gap: 8px;
     flex-wrap: wrap;
+    gap: 8px;
   }
-  .tp-btn {
+  .hp-btn {
     border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
     padding: 6px 14px;
     font-size: 13px;
     cursor: pointer;
-    border: 1px solid #e5e7eb;
-    background: white;
     display: inline-flex;
     align-items: center;
     gap: 6px;
   }
-  .tp-btn-primary {
+  .hp-btn-primary {
     background: #2563eb;
-    color: #fff;
+    color: #ffffff;
     border-color: #2563eb;
   }
+  .hp-btn span {
+    font-size: 14px;
+  }
 
-  /* ========= CARD ========= */
-  .tp-card,
-  .tp-history-card,
-  .tp-fuzzy-card {
-    background: #fff;
+  /* ========= LAYOUT & CARD ========= */
+  .hp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .hp-card,
+  .hp-history-card,
+  .hp-fuzzy-card {
+    background: #ffffff;
     border-radius: 20px;
-    padding: 16px;
+    padding: 16px 16px 14px;
     border: 1px solid #e5e7eb;
     box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
   }
-  .tp-card-header {
+
+  .hp-card-header,
+  .hp-history-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
   }
-  .tp-card-title {
+
+  .hp-card-title,
+  .hp-history-title {
     font-size: 15px;
     font-weight: 600;
+    color: #111827;
   }
-  .tp-card-sub {
+
+  .hp-card-sub {
     font-size: 12px;
     color: #6b7280;
   }
 
-  .tp-info-grid {
+  .hp-info-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.1fr 1fr;
     gap: 8px 16px;
     margin-top: 10px;
+    font-size: 13px;
   }
-  .tp-info-label {
+  .hp-info-item-label {
     font-size: 12px;
     color: #6b7280;
+    margin-bottom: 2px;
   }
-  .tp-info-value {
+  .hp-info-item-value {
     font-size: 13px;
-    font-weight: 500;
     color: #111827;
+    font-weight: 500;
   }
-  .tp-divider {
+
+  .hp-divider {
     border-top: 1px dashed #e5e7eb;
     margin: 10px 0;
   }
 
-
-
-  .tp-stock-box {
-    padding: 10px 12px;
+  /* ========= THANH TỒN KHO ========= */
+  .hp-health-box {
+    margin-top: 8px;
+    padding: 8px 10px;
     border-radius: 14px;
-    background: #eff6ff;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
-  .tp-stock-label {
+  .hp-health-label {
     font-size: 12px;
-    color: #1d4ed8;
+    color: #6b7280;
+    white-space: nowrap;
   }
-  .tp-stock-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1d4ed8;
+  .hp-health-bar-wrap {
+    flex: 1;
   }
-  .tp-stock-note {
-    font-size: 12px;
-    color: #4b5563;
+  .hp-health-bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    overflow: hidden;
+  }
+    .hp-health-bar-inner {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, #22c55e, #16a34a);
   }
 
-  /* ========= LỊCH SỬ SỬ DỤNG / CẤP PHÁT ========= */
-  table.tp-table {
+  .hp-health-score {
+    font-size: 12px;
+    font-weight: 600;
+    color: #15803d;
+    white-space: nowrap;
+  }
+
+  /* ========= LỊCH SỬ ========= */
+  .hp-history-filter {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+  table.hp-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
   }
-  .tp-table th,
-  .tp-table td {
-    padding: 8px;
+  .hp-table thead {
+    background: #f9fafb;
+  }
+  .hp-table th,
+  .hp-table td {
+    padding: 8px 10px;
+    text-align: left;
     border-bottom: 1px solid #f3f4f6;
     white-space: nowrap;
   }
-  .tp-table thead {
-    background: #f9fafb;
+  .hp-table th {
+    font-weight: 600;
+    color: #4b5563;
   }
-  .tp-chip-ok,
-  .tp-chip-warn {
+  .hp-table td {
+    color: #111827;
+  }
+
+  .hp-chip {
+    display: inline-flex;
+    align-items: center;
     padding: 3px 8px;
     border-radius: 999px;
-    border: 1px solid transparent;
     font-size: 11px;
-  }
-  .tp-chip-ok {
-    background: #ecfdf3;
-    border-color: #bbf7d0;
-    color: #166534;
-  }
-  .tp-chip-warn {
-    background: #fef3c7;
-    border-color: #fde047;
-    color: #92400e;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
   }
 
   /* ========= FUZZY ========= */
-  .tp-fuzzy-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-top: 10px;
+  .hp-fuzzy-card {
+    margin-top: 16px;
   }
-  table.tp-fuzzy-table {
+
+  .hp-fuzzy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .hp-fuzzy-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .hp-fuzzy-note {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-fuzzy-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: #f9fafb;
+    margin-bottom: 10px;
+  }
+  .hp-fuzzy-summary-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .hp-fuzzy-summary-value {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .hp-fuzzy-summary-value-ok {
+    color: #166534;
+  }
+
+  .hp-fuzzy-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+  table.hp-fuzzy-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
   }
-  .tp-fuzzy-table th,
-  .tp-fuzzy-table td {
-    padding: 6px 8px;
-    border-bottom: 1px solid #f3f4f6;
+  .hp-fuzzy-table thead {
+    background: #f9fafb;
   }
-  .tp-fuzzy-subtitle {
+  .hp-fuzzy-table th,
+  .hp-fuzzy-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+  }
+  .hp-fuzzy-table th {
+    font-weight: 600;
+    color: #4b5563;
+  }
+  .hp-fuzzy-table td {
+    color: #111827;
+  }
+
+  .hp-fuzzy-subtitle {
     font-size: 13px;
     font-weight: 600;
+    color: #374151;
     margin-bottom: 6px;
   }
 
   @media (max-width: 900px) {
-    .tp-header {
+    .hp-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .hp-header {
       flex-direction: column;
       align-items: flex-start;
-    }
-    .tp-info-grid,
-    .tp-wear-stock,
-    .tp-fuzzy-grid {
-      grid-template-columns: 1fr;
     }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="tool-page">
-
+<div class="holder-page">
   <!-- Breadcrumb -->
-  <div class="tp-breadcrumb">
+  <div class="hp-breadcrumb">
     <a href="#">Kho công cụ</a>
     <span>/</span>
     <a href="#">Tool tiêu hao</a>
     <span>/</span>
-    <span>Mũi khoan Ø10</span>
+    <span>{{ tool.ma_tool|default:"-" }}</span>
   </div>
 
   <!-- Header -->
-  <div class="tp-header">
-    <div class="tp-title-block">
-      <div class="tp-title-row">
-        <div class="tp-title">Mũi khoan Ø10 HSS-Co</div>
-        <div class="tp-tag">Mã tool: DRL-10-2025A</div>
+  <div class="hp-header">
+    <div class="hp-title-block">
+      <div class="hp-main-title-row">
+        <div class="hp-main-title">
+          {{ tool.ten_tool|default:"(Chưa có tên tool)" }}
+        </div>
+        <div class="hp-main-code">
+          Mã: {{ tool.ma_tool|default:"-" }}
+        </div>
       </div>
 
-      <div class="tp-sub-row">
-        <div>Loại tool: <strong>Mũi khoan</strong></div>
-        <div>Dòng tool: <strong>Drill</strong></div>
-        <div>Nhà SX: <strong>YAMAWA</strong></div>
+      <div class="hp-sub-row">
+        <div>Nhóm tool: <strong>{{ tool.nhom_tool|default:"-" }}</strong></div>
+        <div>Dòng tool: <strong>{{ tool.dong_tool|default:"-" }}</strong></div>
+        <div>Nhà sản xuất: <strong>{{ tool.nha_san_xuat|default:"-" }}</strong></div>
+        <div>Tiêu chuẩn: <strong>{{ tool.tieu_chuan|default:"-" }}</strong></div>
       </div>
 
-      <div class="tp-sub-row">
-        <span class="tp-badge tp-badge-warn">Hao mòn cao – chuẩn bị thay</span>
-        <span class="tp-badge">Đường kính: Ø10 mm</span>
-        <span class="tp-badge">Chiều dài làm việc: 25 mm</span>
+      <div class="hp-sub-row">
+        {% if tool.ton_kho == 0 %}
+          <span class="hp-badge hp-badge-status-stop">
+            Hết hàng - cần đặt gấp
+          </span>
+        {% elif tool.muc_canh_bao and tool.ton_kho and tool.ton_kho <= tool.muc_canh_bao %}
+          <span class="hp-badge hp-badge-status-warn">
+            Sắp hết - nên lập yêu cầu mua
+          </span>
+        {% else %}
+          <span class="hp-badge hp-badge-status-ok">
+            Tồn kho an toàn
+          </span>
+        {% endif %}
+
+        <span class="hp-badge">
+          Đơn vị tính: {{ tool.don_vi_tinh|default:"-" }}
+        </span>
+
+        <span class="hp-badge">
+          Vị trí: Tủ {{ tool.tu|default:"-" }} - Ngăn {{ tool.ngan|default:"-" }}
+        </span>
+
+        <span class="hp-badge">
+          Máy / Line ưu tiên: {{ tool.may_uu_tien|default:"-" }}
+        </span>
+
+        {% if tool.loai_gia_cong %}
+        <span class="hp-badge">
+          Loại gia công: {{ tool.get_loai_gia_cong_display }}
+        </span>
+        {% endif %}
+
+        {% if tool.nhom_vat_lieu_iso %}
+        <span class="hp-badge">
+          Nhóm vật liệu ISO: {{ tool.nhom_vat_lieu_iso }}
+        </span>
+        {% endif %}
       </div>
     </div>
 
-    <div class="tp-actions">
-      <button class="tp-btn tp-btn-primary">Cấp tool cho máy</button>
-      <button class="tp-btn">Ghi nhận tiêu hao / hỏng</button>
-      <button class="tp-btn">In tem / QR</button>
-    </div>
-  </div>
-
-  <!-- THÔNG TIN + HAO MÒN + TỒN -->
-  <div class="tp-card">
-    <div class="tp-card-header">
-      <div>
-        <div class="tp-card-title">Thông tin tool tiêu hao</div>
-        <div class="tp-card-sub">Tool dùng 1 chiều: sử dụng xong → bỏ / hủy</div>
-      </div>
-      <span class="tp-tag">ID nội bộ: TOOL-00145</span>
-    </div>
-
-    <div class="tp-info-grid">
-      <div>
-        <div class="tp-info-label">Tên tool</div>
-        <div class="tp-info-value">Mũi khoan Ø10 HSS-Co</div>
-      </div>
-      <div>
-        <div class="tp-info-label">Tiêu chuẩn</div>
-        <div class="tp-info-value">DIN 338</div>
-      </div>
-      <div>
-        <div class="tp-info-label">Model</div>
-        <div class="tp-info-value">HSS-Co10</div>
-      </div>
-      <div>
-        <div class="tp-info-label">Vật liệu cắt phù hợp</div>
-        <div class="tp-info-value">C45, S50C</div>
-      </div>
-    </div>
-
-    <div class="tp-divider"></div>
-
-    <div class="tp-info-grid">
-      <div>
-        <div class="tp-info-label">Số lỗ đã gia công</div>
-        <div class="tp-info-value">1080 / 1500 lỗ (tuổi thọ chuẩn)</div>
-      </div>
-      <div>
-        <div class="tp-info-label">Ngày xuất kho lần đầu</div>
-        <div class="tp-info-value">01/11/2025</div>
-      </div>
-    </div>
-
-    <div class="tp-wear-stock">
-      <!-- Hao mòn -->
-
-      <!-- Tồn kho cùng loại -->
-      <div class="tp-stock-box">
-        <div class="tp-stock-label">Tồn kho cùng loại (mã DRL-10-2025A)</div>
-        <div class="tp-stock-value">12 cái</div>
-        <div class="tp-stock-note">Mức cảnh báo tối thiểu: 8 cái</div>
-      </div>
+    <div class="hp-actions">
+      <button class="hp-btn hp-btn-primary">
+        <span>📦</span> Cấp tool cho máy
+      </button>
+      <button class="hp-btn">
+        <span>📝</span> Ghi nhận tiêu hao / hỏng
+      </button>
+      <button class="hp-btn">
+        <span>🔍</span> In tem / QR
+      </button>
     </div>
   </div>
 
-  <!-- LỊCH SỬ CẤP PHÁT & SỬ DỤNG (VÌ KHÔNG TRẢ LẠI) -->
-  <div class="tp-history-card" style="margin-top: 16px;">
-    <div class="tp-card-header">
-      <div>
-        <div class="tp-card-title">Lịch sử cấp phát & sử dụng</div>
-        <div class="tp-card-sub">Tool lấy ra dùng xong là tiêu hao, không nhập trả</div>
+  <!-- Layout 2 cột -->
+  <div class="hp-layout">
+    <!-- THÔNG TIN CHUNG -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Thông tin chung</div>
+          <div class="hp-card-sub">Thông tin nhận dạng và phân loại Tool tiêu hao</div>
+        </div>
+        <span class="hp-badge">ID nội bộ: {{ tool.id }}</span>
       </div>
-      <div class="tp-card-sub">10 lần cấp phát gần nhất</div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Tên tool</div>
+          <div class="hp-info-item-value">
+            {{ tool.ten_tool|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Mã tool</div>
+          <div class="hp-info-item-value">
+            {{ tool.ma_tool|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Nhóm tool</div>
+          <div class="hp-info-item-value">
+            {{ tool.nhom_tool|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Dòng tool</div>
+          <div class="hp-info-item-value">
+            {{ tool.dong_tool|default:"-" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Nhà sản xuất</div>
+          <div class="hp-info-item-value">
+            {{ tool.nha_san_xuat|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Mã nhà sản xuất</div>
+          <div class="hp-info-item-value">
+            {{ tool.ma_nha_sx|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Vật liệu gia công phù hợp</div>
+          <div class="hp-info-item-value">
+            {{ tool.vat_lieu_phu_hop|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Tuổi thọ chuẩn</div>
+          <div class="hp-info-item-value">
+            {{ tool.tuoi_tho_chuan|default:"-" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Loại gia công</div>
+          <div class="hp-info-item-value">
+            {{ tool.get_loai_gia_cong_display|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Nhóm vật liệu ISO</div>
+          <div class="hp-info-item-value">
+            {{ tool.nhom_vat_lieu_iso|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Dòng máy phù hợp</div>
+          <div class="hp-info-item-value">
+            {{ tool.may_phu_hop|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Yêu cầu coolant</div>
+          <div class="hp-info-item-value">
+            {% if tool.can_coolant %}Có yêu cầu{% else %}Không bắt buộc{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div>
+        <div class="hp-info-item-label">Ghi chú</div>
+        <div class="hp-info-item-value">
+          {{ tool.ghi_chu|default:"Không có ghi chú thêm." }}
+        </div>
+      </div>
     </div>
 
-    <table class="tp-table">
-      <thead>
-        <tr>
-          <th>Ngày</th>
-          <th>Người nhận</th>
-          <th>Máy</th>
-          <th>Số lượng cấp</th>
-          <th>Mục đích / Chi tiết</th>
-          <th>Kết quả sử dụng</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>18/11/2025</td>
-          <td>Trần Văn B</td>
-          <td>CNC-03</td>
-          <td>1 cái</td>
-          <td>Khoan 210 lỗ chi tiết trục C45</td>
-          <td><span class="tp-chip-warn">Mòn nhanh – đề xuất thay</span></td>
-        </tr>
-        <tr>
-          <td>17/11/2025</td>
-          <td>Ngô Văn C</td>
-          <td>CNC-02</td>
-          <td>1 cái</td>
-          <td>Khoan 180 lỗ series S50C</td>
-          <td><span class="tp-chip-ok">Hiệu suất bình thường</span></td>
-        </tr>
-        <tr>
-          <td>16/11/2025</td>
-          <td>Lê Văn D</td>
-          <td>CNC-01</td>
-          <td>1 cái</td>
-          <td>Khoan 150 lỗ chi tiết C45</td>
-          <td><span class="tp-chip-ok">OK – chưa hư</span></td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- THÔNG SỐ & TỒN KHO -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Thông số kỹ thuật & tồn kho</div>
+          <div class="hp-card-sub">Dùng để theo dõi mức tiêu hao và đặt hàng</div>
+        </div>
+      </div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Đường kính làm việc</div>
+          <div class="hp-info-item-value">
+            {% if tool.duong_kinh %}
+              {{ tool.duong_kinh }} mm
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Chiều dài làm việc</div>
+          <div class="hp-info-item-value">
+            {% if tool.chieu_dai_lam_viec %}
+              {{ tool.chieu_dai_lam_viec }} mm
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Đơn vị tính</div>
+          <div class="hp-info-item-value">
+            {{ tool.don_vi_tinh|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Ngày nhập kho</div>
+          <div class="hp-info-item-value">
+            {% if tool.ngay_nhap_kho %}
+              {{ tool.ngay_nhap_kho|date:"d/m/Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Tồn kho hiện tại</div>
+          <div class="hp-info-item-value">
+            {% if tool.ton_kho is not None %}
+              {{ tool.ton_kho }} {{ tool.don_vi_tinh|default:"" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+
+        <div>
+          <div class="hp-info-item-label">Mức cảnh báo tối thiểu</div>
+          <div class="hp-info-item-value">
+            {% if tool.muc_canh_bao is not None %}
+              {{ tool.muc_canh_bao }} {{ tool.don_vi_tinh|default:"" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Giá trị mua</div>
+          <div class="hp-info-item-value">
+            {% if tool.gia_tri_mua %}
+              {{ tool.gia_tri_mua|floatformat:0 }} đ / {{ tool.don_vi_tinh|default:"đv" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Máy / Line ưu tiên</div>
+          <div class="hp-info-item-value">
+            {{ tool.may_uu_tien|default:"-" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">ĐK min cho phép</div>
+          <div class="hp-info-item-value">
+            {% if tool.duong_kinh_min %}
+              {{ tool.duong_kinh_min }} mm
+            {% else %}-{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">ĐK max cho phép</div>
+          <div class="hp-info-item-value">
+            {% if tool.duong_kinh_max %}
+              {{ tool.duong_kinh_max }} mm
+            {% else %}-{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Tỷ lệ sâu lỗ max (L/D)</div>
+          <div class="hp-info-item-value">
+            {% if tool.ty_le_sau_lo_max %}
+              {{ tool.ty_le_sau_lo_max }}
+            {% else %}-{% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Độ cứng VL (min ~ max)</div>
+          <div class="hp-info-item-value">
+            {% if tool.do_cung_min or tool.do_cung_max %}
+              {{ tool.do_cung_min|default:"?" }} ~ {{ tool.do_cung_max|default:"?" }} HRC
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-health-box">
+        <div class="hp-health-label">Mức tồn kho</div>
+        <div class="hp-health-bar-wrap">
+          <div class="hp-health-bar">
+            <div class="hp-health-bar-inner"></div>
+          </div>
+        </div>
+        <div class="hp-health-score">
+          {% if tool.ton_kho is not None %}
+            {{ tool.ton_kho }} còn lại
+          {% else %}
+            -
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- FUZZY CHO TOOL TIÊU HAO -->
-  <div class="tp-fuzzy-card" style="margin-top: 16px;">
-    <div class="tp-card-header">
-      <div>
-        <div class="tp-card-title">Tiêu chí đánh giá fuzzy cho Tool tiêu hao</div>
-        <div class="tp-card-sub">Phục vụ đề xuất chế độ cắt & thời điểm thay dao</div>
+  <!-- LỊCH SỬ CẤP PHÁT & TIÊU HAO -->
+  <div class="hp-history-card">
+    <div class="hp-history-header">
+      <div class="hp-history-title">Lịch sử cấp phát & tiêu hao</div>
+      <div class="hp-history-filter">
+        10 lần cấp phát gần nhất (tool tiêu hao - không trả lại)
       </div>
     </div>
 
-    <div class="tp-fuzzy-grid">
-      <!-- Bảng tiêu chí -->
-      <div>
-        <div class="tp-fuzzy-subtitle">1. Tiêu chí & miền giá trị</div>
-        <table class="tp-fuzzy-table">
-          <thead>
+    <div class="hp-table-wrapper">
+      <table class="hp-table">
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>Người nhận</th>
+            <th>Máy / Line</th>
+            <th>Số lượng</th>
+            <th>Mục đích / Ghi chú</th>
+            <th>Kết quả sử dụng</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if history_list %}
+            {% for h in history_list %}
+              <tr>
+                <td>{{ h.ngay|date:"d/m/Y H:i" }}</td>
+                <td>{{ h.nguoi_nhan|default:"-" }}</td>
+                <td>{{ h.may|default:"-" }}</td>
+                <td>{{ h.so_luong }} {{ tool.don_vi_tinh|default:"" }}</td>
+                <td>{{ h.muc_dich|default:"-" }}</td>
+                <td>
+                  <span class="hp-chip">
+                    {{ h.ket_qua|default:"Tiêu hao bình thường" }}
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
             <tr>
-              <th>Tiêu chí</th>
-              <th>Ký hiệu</th>
-              <th>Miền</th>
-              <th>Đơn vị</th>
-              <th>Ghi chú</th>
+              <td colspan="6" style="text-align:center;color:#9ca3af;padding:10px;">
+                Chưa có dữ liệu lịch sử. Khi có model lịch sử cấp phát, truyền <code>history_list</code> vào để hiển thị.
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Độ mòn dao</td>
-              <td>WEAR</td>
-              <td>[0, 100]</td>
-              <td>%</td>
-              <td>0 = mới, 100 = hỏng</td>
-            </tr>
-            <tr>
-              <td>Độ cứng vật liệu gia công</td>
-              <td>HRC</td>
-              <td>[0, 65]</td>
-              <td>HRC</td>
-              <td>Càng cao → càng mau mòn</td>
-            </tr>
-            <tr>
-              <td>Chiều sâu cắt</td>
-              <td>DOC</td>
-              <td>[0, 5]</td>
-              <td>mm</td>
-              <td>Cắt sâu → tải cắt lớn</td>
-            </tr>
-            <tr>
-              <td>Tốc độ tiến dao</td>
-              <td>F</td>
-              <td>[0, 0.3]</td>
-              <td>mm/vg</td>
-              <td>Feed cao → nhiệt & mòn tăng</td>
-            </tr>
-            <tr>
-              <td>Tốc độ trục chính</td>
-              <td>S</td>
-              <td>[0, 6000]</td>
-              <td>rpm</td>
-              <td>Tốc độ cao → ảnh hưởng bền dao</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-      <!-- Nhãn fuzzy -->
-      <div>
-        <div class="tp-fuzzy-subtitle">2. Nhãn ngôn ngữ fuzzy</div>
-        <table class="tp-fuzzy-table">
-          <thead>
-            <tr>
-              <th>Nhãn</th>
-              <th>Ký hiệu</th>
-              <th>Dùng cho</th>
-              <th>Mô tả</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Rất thấp</td>
-              <td>VL</td>
-              <td>WEAR, DOC</td>
-              <td>Ảnh hưởng rất nhỏ</td>
-            </tr>
-            <tr>
-              <td>Thấp</td>
-              <td>L</td>
-              <td>WEAR, DOC</td>
-              <td>Trong vùng an toàn</td>
-            </tr>
-            <tr>
-              <td>Trung bình</td>
-              <td>M</td>
-              <td>HRC, F, S</td>
-              <td>Ảnh hưởng đáng kể, cần theo dõi</td>
-            </tr>
-            <tr>
-              <td>Cao</td>
-              <td>H</td>
-              <td>WEAR, HRC</td>
-              <td>Dễ gây mẻ dao / gãy dao</td>
-            </tr>
-            <tr>
-              <td>Rất cao</td>
-              <td>VH</td>
-              <td>F, S</td>
-              <td>Nguy cơ phá dao, nên giảm chế độ cắt</td>
-            </tr>
-          </tbody>
-        </table>
+  <!-- ĐÁNH GIÁ FUZZY CHO TOOL TIÊU HAO -->
+  <div class="hp-fuzzy-card">
+    <div class="hp-fuzzy-header">
+      <div class="hp-fuzzy-title">Đánh giá fuzzy cho Tool tiêu hao</div>
+      <div class="hp-fuzzy-note">
+        Kết quả gợi ý thời điểm thay tool và chế độ cắt tối ưu.
       </div>
     </div>
 
-    <!-- Đánh giá fuzzy mẫu cho tool này -->
-    <div style="margin-top: 14px;">
-      <div class="tp-fuzzy-subtitle">3. Đánh giá fuzzy (mẫu) cho tool hiện tại</div>
-      <table class="tp-fuzzy-table">
+    <div class="hp-fuzzy-summary">
+      <span class="hp-fuzzy-summary-label">Kết luận chung:</span>
+      <span class="hp-fuzzy-summary-value hp-fuzzy-summary-value-ok">
+        {{ tool.ket_luan_fuzzy|default:"Chưa có kết luận fuzzy. Hệ thống sẽ cập nhật sau khi có đủ dữ liệu." }}
+      </span>
+    </div>
+
+    <div class="hp-fuzzy-table-wrapper">
+      <div class="hp-fuzzy-subtitle">Thông tin fuzzy tham chiếu</div>
+      <table class="hp-fuzzy-table">
         <thead>
           <tr>
             <th>Tiêu chí</th>
-            <th>Giá trị</th>
-            <th>Nhãn fuzzy</th>
+            <th>Giá trị / Ngưỡng</th>
             <th>Ghi chú</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>WEAR</td>
-            <td>72%</td>
-            <td>Cao (H)</td>
-            <td>Sát ngưỡng thay dao</td>
+            <td>Độ mòn tối đa (WEAR_MAX)</td>
+            <td>
+              {% if tool.wear_max is not None %}
+                {{ tool.wear_max }}%
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>Giá trị tương ứng 100% mòn</td>
           </tr>
           <tr>
-            <td>HRC</td>
-            <td>45 HRC</td>
-            <td>Cao (H)</td>
-            <td>Vật liệu cứng, cần điều chỉnh chế độ</td>
+            <td>Ngưỡng cảnh báo thay (THRESH)</td>
+            <td>
+              {% if tool.nguong_thay is not None %}
+                {{ tool.nguong_thay }}%
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>Khi độ mòn vượt mức này → khuyến nghị thay tool</td>
           </tr>
           <tr>
-            <td>DOC</td>
-            <td>1.2 mm</td>
-            <td>Trung bình (M)</td>
-            <td>Có thể giảm nhẹ để tăng bền dao</td>
+            <td>Độ cứng vật liệu tham chiếu (HRC)</td>
+            <td>
+              {% if tool.hrc_tham_chieu is not None %}
+                {{ tool.hrc_tham_chieu }} HRC
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>Dùng làm cơ sở tính toán tuổi thọ</td>
           </tr>
           <tr>
-            <td>Tiến dao (F)</td>
-            <td>0.15 mm/v</td>
-            <td>Cao (H)</td>
-            <td>Nhiệt cao, mòn mép cắt nhanh</td>
+            <td>Chế độ cắt khuyến nghị</td>
+            <td colspan="2">
+              {{ tool.che_do_cat_khuyen_nghi|default:"Chưa có dữ liệu." }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="hp-divider" style="margin-top:12px;"></div>
+
+      <div class="hp-fuzzy-subtitle">Các điểm đánh giá mờ (1 = thấp, 5 = rất cao)</div>
+      <table class="hp-fuzzy-table">
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Điểm (1–5)</th>
+            <th>Ý nghĩa</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Giá</td>
+            <td>{{ tool.diem_gia|default:"-" }}</td>
+            <td>1 = rất rẻ, 5 = rất đắt</td>
           </tr>
           <tr>
-            <td>Tốc độ trục chính (S)</td>
-            <td>3200 rpm</td>
-            <td>Trung bình (M)</td>
-            <td>Giữ được bề mặt ổn</td>
+            <td>Độ bền</td>
+            <td>{{ tool.diem_do_ben|default:"-" }}</td>
+            <td>1 = nhanh mòn, 5 = rất bền</td>
+          </tr>
+          <tr>
+            <td>Độ ổn định quá trình</td>
+            <td>{{ tool.diem_on_dinh|default:"-" }}</td>
+            <td>1 = hay gãy / kẹt phoi, 5 = chạy rất ổn</td>
+          </tr>
+          <tr>
+            <td>Chất lượng bề mặt</td>
+            <td>{{ tool.diem_chat_luong_be_mat|default:"-" }}</td>
+            <td>1 = bề mặt thô, 5 = rất đẹp</td>
+          </tr>
+          <tr>
+            <td>Độ sẵn có</td>
+            <td>{{ tool.diem_san_co|default:"-" }}</td>
+            <td>1 = khó mua, 5 = luôn có hàng</td>
+          </tr>
+          <tr>
+            <td>Ưu tiên dùng trước</td>
+            <td>{{ tool.diem_uu_tien_dung_truoc|default:"-" }}</td>
+            <td>1 = ít ưu tiên, 5 = nên dùng trước các dòng khác</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 
-</div>
+  <!-- HOLDER ĐANG MATCH VỚI TOOL NÀY -->
+  <div class="hp-card" style="margin-top:16px;">
+    <div class="hp-card-header">
+      <div>
+        <div class="hp-card-title">Holder đang khớp với tool này</div>
+        <div class="hp-card-sub">
+          Danh sách các holder đã được cấu hình tương thích (tool_khuyen_dung).
+        </div>
+      </div>
+    </div>
+
+    <div class="hp-table-wrapper">
+      <table class="hp-table">
+        <thead>
+          <tr>
+            <th>Mã holder</th>
+            <th>Tên holder</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if holders_match %}
+            {% for h in holders_match %}
+              <tr>
+                <td>{{ h.ma_holder|default:"-" }}</td>
+                <td>{{ h.ten_holder|default:"(Chưa đặt tên)" }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="3" style="text-align:center;color:#9ca3af;padding:10px;">
+                Chưa có holder nào được đánh dấu khuyên dùng cho tool này.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 {% endblock %}

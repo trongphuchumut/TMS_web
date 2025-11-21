@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'chatbot',
     'holder',
     'tool',
+    'holder_muontra',
+    'tool_muontra',
 ]
 
 MIDDLEWARE = [
