@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TMS Web - Liên hệ</title>
+    <style>
+        :root {
+            --blue-tech: #38bdf8;
+            --blue-strong: #0f172a;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 32px;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 6px rgba(15,23,42,.04);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        .logo-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--blue-tech);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(56,189,248,.4);
+        }
+        .brand span { color: var(--blue-tech); }
+
+        main {
+            max-width: 720px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+
+        .contact-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px 24px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 16px 40px rgba(15,23,42,.06);
+        }
+        .contact-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .contact-sub {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .person-row {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 999px;
+            background: #e0f2fe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            color: #0369a1;
+        }
+        .person-info h3 {
+            margin: 0 0 4px;
+            font-size: 20px;
+        }
+        .person-role {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        .info-line {
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #4b5563;
+            margin-right: 4px;
+        }
+        a.info-value {
+            color: var(--blue-strong);
+            text-decoration: none;
+        }
+        a.info-value:hover {
+            text-decoration: underline;
+        }
+        .note {
+            margin-top: 16px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        footer {
+            text-align: center;
+            padding: 24px 0 16px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 640px) {
+            header { padding: 10px 16px; }
+            .person-row { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/" class="brand">
+            <div class="logo-box">T</div>
+            <span>TMS</span>&nbsp;Web
+        </a>
+        <div style="font-size:14px;color:#6b7280;">
+            Trang liên hệ
+        </div>
+    </header>
+
+    <main>
+        <section class="contact-card">
+            <h1 class="contact-title">Thông tin người phụ trách</h1>
+            <p class="contact-sub">
+                Liên hệ khi cần hỗ trợ về hệ thống TMS Web, kho công cụ hoặc tài khoản đăng nhập.
+            </p>
+
+            <div class="person-row">
+                <div class="avatar">
+                    TP <!-- viết tắt tên, ví dụ: Trọng Phúc -->
+                </div>
+                <div class="person-info">
+                    <h3>Nguyễn Trọng Phúc</h3>
+                    <div class="person-role">
+                        Kỹ sư phụ trách hệ thống TMS Web
+                    </div>
+
+                    <div class="info-line">
+                        <span class="info-label">Điện thoại:</span>
+                        <a class="info-value" href="tel:0900000000">0900 000 000</a>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">Email:</span>
+                        <a class="info-value" href="mailto:phuc@example.com">phuc@example.com</a>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">Đơn vị:</span>
+                        <span class="info-value">Phòng Kỹ thuật / Xưởng bảo trì</span>
+                    </div>
+                    <div class="info-line">
+                        <span class="info-label">Thời gian hỗ trợ:</span>
+                        <span class="info-value">Thứ 2 – Thứ 6, 8:00 – 17:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <p class="note">
+                Ghi chú: Ngoài giờ làm việc, vui lòng để lại email hoặc tin nhắn Zalo, người phụ trách sẽ phản hồi sớm nhất.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        © 2025 TMS Web · Liên hệ hỗ trợ hệ thống
+    </footer>
+</body>
+</html>

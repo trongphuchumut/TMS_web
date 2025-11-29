@@ -1,0 +1,794 @@
+{% extends "base.html" %}
+
+{% block title %}Tạo Tool tiêu hao mới{% endblock %}
+
+{% block extra_css %}
+<style>
+  .holder-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 16px 0 32px;
+  }
+
+  .hp-breadcrumb {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  .hp-breadcrumb a {
+    color: #4b5563;
+    text-decoration: none;
+  }
+  .hp-breadcrumb span {
+    margin: 0 4px;
+  }
+
+  .hp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .hp-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hp-main-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .hp-sub-row {
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .hp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hp-btn {
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+  .hp-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+
+  .hp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .hp-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 16px 16px 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+    margin-bottom: 16px;
+  }
+
+  .hp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .hp-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .hp-card-sub {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-divider {
+    border-top: 1px dashed #e5e7eb;
+    margin: 12px 0;
+  }
+
+  /* ===== FORM ELEMENTS ===== */
+  .hp-form-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+  }
+  .hp-form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px 16px;
+  }
+  .hp-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .hp-form-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .hp-form-label span {
+    color: #ef4444;
+    margin-left: 2px;
+  }
+  .hp-form-input,
+  .hp-form-select,
+  .hp-form-textarea {
+    font-size: 13px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #111827;
+    width: 100%;
+  }
+  .hp-form-input:focus,
+  .hp-form-select:focus,
+  .hp-form-textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.1);
+  }
+  .hp-form-textarea {
+    min-height: 70px;
+    resize: vertical;
+  }
+  .hp-form-hint {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+
+  .hp-form-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .hp-inline-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #4b5563;
+  }
+
+  @media (max-width: 900px) {
+    .hp-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .hp-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="holder-page">
+  <!-- Breadcrumb -->
+  <div class="hp-breadcrumb">
+    <a href="#">Kho công cụ</a>
+    <span>/</span>
+    <a href="#">Tool tiêu hao</a>
+    <span>/</span>
+    <span>Tạo Tool tiêu hao mới</span>
+  </div>
+
+  <!-- Header -->
+  <div class="hp-header">
+    <div class="hp-title-block">
+      <div class="hp-main-title">Tạo Tool tiêu hao mới</div>
+      <div class="hp-sub-row">
+        Nhập thông tin nhận dạng, thông số kỹ thuật, ràng buộc và tồn kho cho tool tiêu hao.
+      </div>
+    </div>
+
+    <div class="hp-actions">
+      <a href="{% url 'tool:tool_list' %}" class="hp-btn">
+        ⬅ Quay lại danh sách
+      </a>
+    </div>
+  </div>
+
+  <form method="post" action="">
+    {% csrf_token %}
+
+    <!-- LAYOUT 2 CỘT: THÔNG TIN CHUNG & THÔNG SỐ - TỒN KHO -->
+    <div class="hp-layout">
+      <!-- THÔNG TIN CHUNG -->
+      <div class="hp-card">
+        <div class="hp-card-header">
+          <div>
+            <div class="hp-card-title">Thông tin chung</div>
+            <div class="hp-card-sub">Thông tin nhận dạng và phân loại Tool tiêu hao</div>
+          </div>
+        </div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Tên tool<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="ten_tool"
+              class="hp-form-input"
+              placeholder="VD: Mũi khoan Ø10 HSS-Co"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Mã tool<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="ma_tool"
+              class="hp-form-input"
+              placeholder="VD: DRL-10-2025A"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Nhóm tool<span>*</span>
+            </label>
+            <input
+              type="text"
+              name="nhom_tool"
+              class="hp-form-input"
+              placeholder="VD: Mũi khoan, Dao phay, Mũi taro…"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Dòng tool
+            </label>
+            <input
+              type="text"
+              name="dong_tool"
+              class="hp-form-input"
+              placeholder="VD: Drill, Endmill, Tap…"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Nhà sản xuất
+            </label>
+            <input
+              type="text"
+              name="nha_san_xuat"
+              class="hp-form-input"
+              placeholder="VD: YAMAWA, OSG, Sumitomo…"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">
+              Mã nhà sản xuất
+            </label>
+            <input
+              type="text"
+              name="ma_nha_sx"
+              class="hp-form-input"
+              placeholder="VD: HSS-Co10-Ø10-100"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Tiêu chuẩn</label>
+            <input
+              type="text"
+              name="tieu_chuan"
+              class="hp-form-input"
+              placeholder="VD: DIN 338, JIS, ISO…"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Model</label>
+            <input
+              type="text"
+              name="model"
+              class="hp-form-input"
+              placeholder="VD: HSS-Co10"
+            />
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Vật liệu gia công phù hợp</label>
+            <input
+              type="text"
+              name="vat_lieu_phu_hop"
+              class="hp-form-input"
+              placeholder="VD: C45, S50C, SUS304…"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Ghi chú thêm</label>
+            <textarea
+              name="ghi_chu"
+              class="hp-form-textarea"
+              placeholder="VD: Ưu tiên dùng cho line CNC-01 ~ CNC-03, không dùng cho vật liệu quá 50 HRC…"
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- THÔNG SỐ KỸ THUẬT & TỒN KHO -->
+      <div class="hp-card">
+        <div class="hp-card-header">
+          <div>
+            <div class="hp-card-title">Thông số kỹ thuật & tồn kho</div>
+            <div class="hp-card-sub">Thông số hình học và quản lý số lượng Tool tiêu hao</div>
+          </div>
+        </div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Đường kính làm việc (mm)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              name="duong_kinh"
+              class="hp-form-input"
+              placeholder="VD: 10"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Chiều dài làm việc (mm)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              name="chieu_dai_lam_viec"
+              class="hp-form-input"
+              placeholder="VD: 25"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Đơn vị tính</label>
+            <input
+              type="text"
+              name="don_vi_tinh"
+              class="hp-form-input"
+              placeholder="VD: cái, hộp, bộ…"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Tuổi thọ chuẩn (số lỗ / lần dùng)</label>
+            <input
+              type="text"
+              name="tuoi_tho_chuan"
+              class="hp-form-input"
+              placeholder="VD: 1500 lỗ / 1 tool"
+            />
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Tồn kho ban đầu<span>*</span></label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              name="ton_kho"
+              class="hp-form-input"
+              placeholder="VD: 12"
+              required
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Mức cảnh báo tối thiểu</label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              name="muc_canh_bao"
+              class="hp-form-input"
+              placeholder="VD: 8"
+            />
+            <div class="hp-form-hint">Khi tồn kho ≤ mức này, hệ thống cảnh báo cần đặt hàng.</div>
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-3">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Tủ / Kệ</label>
+            <input
+              type="text"
+              name="tu"
+              class="hp-form-input"
+              placeholder="VD: Tủ A3"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Ngăn / Khay</label>
+            <input
+              type="text"
+              name="ngan"
+              class="hp-form-input"
+              placeholder="VD: Ngăn 02 – Khay DRL10"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Máy / Line ưu tiên</label>
+            <input
+              type="text"
+              name="may_uu_tien"
+              class="hp-form-input"
+              placeholder="VD: CNC-01, CNC-02"
+            />
+          </div>
+        </div>
+
+        <div class="hp-divider"></div>
+
+        <div class="hp-form-grid-2">
+          <div class="hp-form-group">
+            <label class="hp-form-label">Ngày nhập kho</label>
+            <input
+              type="date"
+              name="ngay_nhap_kho"
+              class="hp-form-input"
+            />
+          </div>
+
+          <div class="hp-form-group">
+            <label class="hp-form-label">Giá trị mua (VND / đơn vị)</label>
+            <input
+              type="number"
+              step="1000"
+              min="0"
+              name="gia_tri_mua"
+              class="hp-form-input"
+              placeholder="VD: 25000"
+            />
+            <div class="hp-form-hint">Nhập đơn giá 1 tool / 1 đơn vị.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RÀNG BUỘC KỸ THUẬT / ISO / MÁY -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Ràng buộc kỹ thuật cho đề xuất fuzzy</div>
+          <div class="hp-card-sub">
+            Dùng để lọc tool phù hợp với bài toán gia công (loại gia công, vật liệu, kích thước, máy...).
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Loại gia công chính<span>*</span></label>
+          <select name="loai_gia_cong" class="hp-form-select" required>
+            <option value="">-- Chọn loại gia công --</option>
+            <option value="DRILL">Khoan</option>
+            <option value="MILL">Phay</option>
+            <option value="TAP">Taro</option>
+            <option value="REAM">Doa</option>
+            <option value="TURN">Tiện</option>
+          </select>
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Nhóm vật liệu ISO</label>
+          <select name="nhom_vat_lieu_iso" class="hp-form-select">
+            <option value="">-- Không chọn / chung --</option>
+            <option value="P">Thép (ISO P)</option>
+            <option value="M">Thép không gỉ (ISO M)</option>
+            <option value="K">Gang (ISO K)</option>
+            <option value="N">Nhôm/kim loại màu (ISO N)</option>
+            <option value="S">Hợp kim chịu nhiệt (ISO S)</option>
+            <option value="H">Thép đã tôi (ISO H)</option>
+          </select>
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Dòng máy phù hợp</label>
+          <input
+            type="text"
+            name="may_phu_hop"
+            class="hp-form-input"
+            placeholder="VD: VMC 10.000 rpm, CNC tiện..."
+          />
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3" style="margin-top:10px;">
+        <div class="hp-form-group">
+          <label class="hp-form-label">ĐK min cho phép (mm)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            name="duong_kinh_min"
+            class="hp-form-input"
+            placeholder="VD: 8"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">ĐK max cho phép (mm)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            name="duong_kinh_max"
+            class="hp-form-input"
+            placeholder="VD: 12"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Tỷ lệ sâu lỗ max (L/D)</label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            name="ty_le_sau_lo_max"
+            class="hp-form-input"
+            placeholder="VD: 5 (tức L = 5×D)"
+          />
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3" style="margin-top:10px;">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ cứng VL min (HRC)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            name="do_cung_min"
+            class="hp-form-input"
+            placeholder="VD: 20"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ cứng VL max (HRC)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            name="do_cung_max"
+            class="hp-form-input"
+            placeholder="VD: 45"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Tưới nguội / coolant</label>
+          <div class="hp-inline-checkbox">
+            <input
+              type="checkbox"
+              name="can_coolant"
+              value="on"
+              id="id_can_coolant"
+            />
+            <label for="id_can_coolant">Yêu cầu coolant khi gia công</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUZZY / TIÊU HAO (OPTIONAL) -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Thông tin fuzzy cho tool tiêu hao (tùy chọn)</div>
+          <div class="hp-card-sub">
+            Có thể để trống, hệ thống có thể tự tính sau dựa trên lịch sử cấp phát & sử dụng.
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ mòn dự kiến tối đa (%)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="100"
+            name="wear_max"
+            class="hp-form-input"
+            placeholder="VD: 100"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Ngưỡng cảnh báo thay (%)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="100"
+            name="nguong_thay"
+            class="hp-form-input"
+            placeholder="VD: 70"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ cứng vật liệu tham chiếu (HRC)</label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            max="70"
+            name="hrc_tham_chieu"
+            class="hp-form-input"
+            placeholder="VD: 45"
+          />
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-form-grid-3">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Điểm giá (1 = rẻ, 5 = rất đắt)</label>
+          <input
+            type="number"
+            name="diem_gia"
+            class="hp-form-input"
+            min="1"
+            max="5"
+            step="1"
+            placeholder="1 ~ 5"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Điểm độ bền (1 = thấp, 5 = rất bền)</label>
+          <input
+            type="number"
+            name="diem_do_ben"
+            class="hp-form-input"
+            min="1"
+            max="5"
+            step="1"
+            placeholder="1 ~ 5"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ ổn định quá trình (1 = kém, 5 = rất ổn)</label>
+          <input
+            type="number"
+            name="diem_on_dinh"
+            class="hp-form-input"
+            min="1"
+            max="5"
+            step="1"
+            placeholder="1 ~ 5"
+          />
+        </div>
+      </div>
+
+      <div class="hp-form-grid-3" style="margin-top:10px;">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Chất lượng bề mặt (1 = thô, 5 = rất đẹp)</label>
+          <input
+            type="number"
+            name="diem_chat_luong_be_mat"
+            class="hp-form-input"
+            min="1"
+            max="5"
+            step="1"
+            placeholder="1 ~ 5"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Độ sẵn có (1 = khó mua, 5 = luôn sẵn)</label>
+          <input
+            type="number"
+            name="diem_san_co"
+            class="hp-form-input"
+            min="1"
+            max="5"
+            step="1"
+            placeholder="1 ~ 5"
+          />
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Ưu tiên dùng trước (1 = ít, 5 = ưu tiên cao)</label>
+          <input
+            type="number"
+            name="diem_uu_tien_dung_truoc"
+            class="hp-form-input"
+            min="1"
+            max="5"
+            step="1"
+            placeholder="1 ~ 5"
+          />
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-form-grid-2">
+        <div class="hp-form-group">
+          <label class="hp-form-label">Chế độ cắt khuyến nghị</label>
+          <textarea
+            name="che_do_cat_khuyen_nghi"
+            class="hp-form-textarea"
+            placeholder="VD: Ưu tiên dùng với S=3200 rpm, F=0.15 mm/v, chiều sâu cắt ≤ 1.5 mm..."
+          ></textarea>
+        </div>
+
+        <div class="hp-form-group">
+          <label class="hp-form-label">Kết luận fuzzy / khuyến nghị thay thế</label>
+          <textarea
+            name="ket_luan_fuzzy"
+            class="hp-form-textarea"
+            placeholder="VD: Khi WEAR > 70% và HRC > 40 thì đề xuất thay tool mới..."
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- NÚT LƯU -->
+    <div class="hp-form-actions">
+      <a href="{% url 'tool:tool_list' %}" class="hp-btn">
+        Hủy
+      </a>
+      <button type="submit" class="hp-btn hp-btn-primary">
+        💾 Lưu Tool tiêu hao
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

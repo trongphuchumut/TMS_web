@@ -1,0 +1,690 @@
+{% extends "base.html" %}
+
+{% block title %}Thông tin Holder{% endblock %}
+
+{% block extra_css %}
+<style>
+  .holder-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 16px 0 32px;
+  }
+
+  /* ========= BREADCRUMB & HEADER ========= */
+  .hp-breadcrumb {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+  }
+  .hp-breadcrumb a {
+    color: #4b5563;
+    text-decoration: none;
+  }
+  .hp-breadcrumb span {
+    margin: 0 4px;
+  }
+
+  .hp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .hp-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .hp-main-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hp-main-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .hp-main-code {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+
+  .hp-sub-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 13px;
+    color: #4b5563;
+  }
+
+  .hp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #374151;
+  }
+  .hp-badge-status-ok {
+    background: #ecfdf3;
+    color: #166534;
+    border-color: #bbf7d0;
+  }
+  .hp-badge-status-maint {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+  }
+  .hp-badge-status-stop {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+  }
+
+  .hp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hp-btn {
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hp-btn-primary {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+  .hp-btn span {
+    font-size: 14px;
+  }
+
+  /* ========= LAYOUT & CARD ========= */
+  .hp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+
+  .hp-card,
+  .hp-history-card,
+  .hp-fuzzy-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 16px 16px 14px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .hp-card-header,
+  .hp-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .hp-card-title,
+  .hp-history-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .hp-card-sub {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-info-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 8px 16px;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .hp-info-item-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+  }
+  .hp-info-item-value {
+    font-size: 13px;
+    color: #111827;
+    font-weight: 500;
+  }
+
+  .hp-divider {
+    border-top: 1px dashed #e5e7eb;
+    margin: 10px 0;
+  }
+
+  /* ========= THANH TRẠNG THÁI ========= */
+  .hp-health-box {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: #f9fafb;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hp-health-label {
+    font-size: 12px;
+    color: #6b7280;
+    white-space: nowrap;
+  }
+  .hp-health-bar-wrap {
+    flex: 1;
+  }
+  .hp-health-bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    overflow: hidden;
+  }
+  .hp-health-bar-inner {
+    position: absolute;
+    inset: 0;
+    width: 85%; /* tạm thời cố định, sau này có thể tính theo % mòn */
+    background: linear-gradient(to right, #22c55e, #16a34a);
+  }
+  .hp-health-score {
+    font-size: 12px;
+    font-weight: 600;
+    color: #15803d;
+    white-space: nowrap;
+  }
+
+  /* ========= LỊCH SỬ ========= */
+  .hp-history-filter {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+  table.hp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .hp-table thead {
+    background: #f9fafb;
+  }
+  .hp-table th,
+  .hp-table td {
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+  }
+  .hp-table th {
+    font-weight: 600;
+    color: #4b5563;
+  }
+  .hp-table td {
+    color: #111827;
+  }
+
+  .hp-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  /* ========= FUZZY ========= */
+  .hp-fuzzy-card {
+    margin-top: 16px;
+  }
+
+  .hp-fuzzy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .hp-fuzzy-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+  }
+  .hp-fuzzy-note {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .hp-fuzzy-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: #f9fafb;
+    margin-bottom: 10px;
+  }
+  .hp-fuzzy-summary-label {
+    font-size: 12px;
+    color: #6b7280;
+  }
+  .hp-fuzzy-summary-value {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .hp-fuzzy-summary-value-ok {
+    color: #166534;
+  }
+  .hp-fuzzy-summary-chip {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid #bbf7d0;
+    background: #ecfdf3;
+    color: #166534;
+  }
+
+  .hp-fuzzy-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+  table.hp-fuzzy-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .hp-fuzzy-table thead {
+    background: #f9fafb;
+  }
+  .hp-fuzzy-table th,
+  .hp-fuzzy-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+  }
+  .hp-fuzzy-table th {
+    font-weight: 600;
+    color: #4b5563;
+  }
+  .hp-fuzzy-table td {
+    color: #111827;
+  }
+
+  .hp-fuzzy-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .hp-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .hp-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="holder-page">
+  <!-- Breadcrumb -->
+  <div class="hp-breadcrumb">
+    <a href="#">Kho công cụ</a>
+    <span>/</span>
+    <a href="#">Danh sách Holder</a>
+    <span>/</span>
+    <span>{{ holder.ma_noi_bo }}</span>
+  </div>
+
+  <!-- Header -->
+  <div class="hp-header">
+    <div class="hp-title-block">
+      <div class="hp-main-title-row">
+        <div class="hp-main-title">
+          {{ holder.ten_thiet_bi|default:"(Chưa có tên thiết bị)" }}
+        </div>
+        <div class="hp-main-code">
+          Mã: {{ holder.ma_noi_bo|default:"-" }}
+        </div>
+      </div>
+
+      <div class="hp-sub-row">
+        <div>Nhóm: <strong>{{ holder.nhom_thiet_bi|default:"-" }}</strong></div>
+        <div>Loại holder: <strong>{{ holder.loai_holder|default:"-" }}</strong></div>
+        <div>Nhà sản xuất: <strong>{{ holder.nha_san_xuat|default:"-" }}</strong></div>
+        <div>Nhà cung cấp: <strong>{{ holder.nha_cung_cap|default:"-" }}</strong></div>
+      </div>
+
+      <div class="hp-sub-row">
+        {% if holder.trang_thai_tai_san == "dang_su_dung" %}
+          <span class="hp-badge hp-badge-status-ok">
+            {{ holder.get_trang_thai_tai_san_display }}
+          </span>
+        {% elif holder.trang_thai_tai_san == "dang_bao_tri" %}
+          <span class="hp-badge hp-badge-status-maint">
+            {{ holder.get_trang_thai_tai_san_display }}
+          </span>
+        {% elif holder.trang_thai_tai_san == "ngung_su_dung" %}
+          <span class="hp-badge hp-badge-status-stop">
+            {{ holder.get_trang_thai_tai_san_display }}
+          </span>
+        {% else %}
+          <span class="hp-badge">Chưa đặt trạng thái</span>
+        {% endif %}
+
+        <span class="hp-badge">
+          Vị trí:
+          Tủ {{ holder.tu|default:"-" }} - Ngăn {{ holder.ngan|default:"-" }}
+        </span>
+
+        <span class="hp-badge">
+          Máy ưu tiên: {{ holder.may_uu_tien|default:"-" }}
+        </span>
+
+        {% if holder.chu_ky_kiem_tra %}
+        <span class="hp-badge hp-badge-status-maint">
+          Chu kỳ kiểm tra: {{ holder.chu_ky_kiem_tra }}
+        </span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="hp-actions">
+      <a href="{% url 'holder_muontra:borrow_for_holder' holder.id %}" class="hp-btn hp-btn-primary">
+        <span>📄</span> Tạo phiếu mượn
+      </a>
+    </div>
+  </div>
+
+  <!-- Layout 2 cột -->
+  <div class="hp-layout">
+    <!-- THÔNG TIN CHUNG -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Thông tin chung</div>
+          <div class="hp-card-sub">Thông tin nhận dạng và quản lý Holder</div>
+        </div>
+        <span class="hp-badge">ID nội bộ: {{ holder.id }}</span>
+      </div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Tên thiết bị</div>
+          <div class="hp-info-item-value">
+            {{ holder.ten_thiet_bi|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Nhóm thiết bị</div>
+          <div class="hp-info-item-value">
+            {{ holder.nhom_thiet_bi|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Mã nhà sản xuất</div>
+          <div class="hp-info-item-value">
+            {{ holder.ma_nha_sx|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Số serial</div>
+          <div class="hp-info-item-value">
+            {{ holder.so_serial|default:"-" }}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Ngày nhập kho</div>
+          <div class="hp-info-item-value">
+            {% if holder.ngay_nhap_kho %}
+              {{ holder.ngay_nhap_kho|date:"d/m/Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Giá trị mua</div>
+          <div class="hp-info-item-value">
+            {% if holder.gia_tri_mua %}
+              {{ holder.gia_tri_mua|floatformat:0 }} đ
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Trạng thái tài sản</div>
+          <div class="hp-info-item-value">
+            {{ holder.get_trang_thai_tai_san_display|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Người quản lý</div>
+          <div class="hp-info-item-value">
+            {{ holder.nguoi_quan_ly|default:"-" }}
+          </div>
+        </div>
+      </div>
+
+      {% if holder.mon %}
+      <div class="hp-health-box">
+        <div class="hp-health-label">Tình trạng tổng thể</div>
+        <div class="hp-health-bar-wrap">
+          <div class="hp-health-bar">
+            <div class="hp-health-bar-inner"></div>
+          </div>
+        </div>
+        <div class="hp-health-score">
+          Mòn: {{ holder.mon }}%
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- THÔNG SỐ & TÌNH TRẠNG KỸ THUẬT -->
+    <div class="hp-card">
+      <div class="hp-card-header">
+        <div>
+          <div class="hp-card-title">Thông số kỹ thuật & tình trạng</div>
+          <div class="hp-card-sub">Dùng để chọn Tool phù hợp và quản lý chất lượng</div>
+        </div>
+      </div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Chuẩn gá</div>
+          <div class="hp-info-item-value">
+            {{ holder.chuan_ga|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Loại kẹp</div>
+          <div class="hp-info-item-value">
+            {{ holder.loai_kep|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Chiều dài làm việc</div>
+          <div class="hp-info-item-value">
+            {% if holder.chieu_dai_lam_viec %}
+              {{ holder.chieu_dai_lam_viec }} mm
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Đường kính kẹp max</div>
+          <div class="hp-info-item-value">
+            {% if holder.duong_kinh_kep_max %}
+              {{ holder.duong_kinh_kep_max }} mm
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="hp-divider"></div>
+
+      <div class="hp-info-grid">
+        <div>
+          <div class="hp-info-item-label">Lần kiểm tra gần nhất</div>
+          <div class="hp-info-item-value">
+            {% if holder.lan_kiem_tra_gan_nhat %}
+              {{ holder.lan_kiem_tra_gan_nhat|date:"d/m/Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Chu kỳ kiểm tra</div>
+          <div class="hp-info-item-value">
+            {{ holder.chu_ky_kiem_tra|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Số lần gá / tháo</div>
+          <div class="hp-info-item-value">
+            {{ holder.so_lan_ga_thao|default:"-" }}
+          </div>
+        </div>
+        <div>
+          <div class="hp-info-item-label">Đánh giá gần nhất</div>
+          <div class="hp-info-item-value">
+            {{ holder.danh_gia_gan_nhat|default:"-" }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LỊCH SỬ MƯỢN / TRẢ & BẢO TRÌ (tạm thời chưa có model nên để placeholder) -->
+  <div class="hp-history-card">
+    <div class="hp-history-header">
+      <div class="hp-history-title">Lịch sử mượn / trả & bảo trì</div>
+      <div class="hp-history-filter">Chưa kết nối dữ liệu lịch sử (sẽ bổ sung sau)</div>
+    </div>
+
+    <div class="hp-table-wrapper">
+      <table class="hp-table">
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>Loại phiếu</th>
+            <th>Người thao tác</th>
+            <th>Máy / Line</th>
+            <th>Ghi chú</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" style="text-align:center;color:#9ca3af;padding:10px;">
+              Chưa có dữ liệu lịch sử. Tạo model phiếu mượn / bảo trì để hiển thị tại đây.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ĐÁNH GIÁ FUZZY CHO HOLDER -->
+  <div class="hp-fuzzy-card">
+    <div class="hp-fuzzy-header">
+      <div class="hp-fuzzy-title">Đánh giá fuzzy cho Holder này</div>
+      <div class="hp-fuzzy-note">Kết quả suy luận từ các tiêu chí kỹ thuật.</div>
+    </div>
+
+    <div class="hp-fuzzy-summary">
+      <span class="hp-fuzzy-summary-label">Kết luận chung:</span>
+      <span class="hp-fuzzy-summary-value hp-fuzzy-summary-value-ok">
+        {{ holder.ket_luan_fuzzy|default:"Chưa có kết luận fuzzy. Bạn có thể tính toán và lưu vào trường 'ket_luan_fuzzy'." }}
+      </span>
+    </div>
+
+    <div class="hp-fuzzy-table-wrapper">
+      <div class="hp-fuzzy-subtitle">Chi tiết các tiêu chí fuzzy</div>
+      <table class="hp-fuzzy-table">
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th>Giá trị đo được</th>
+            <th>Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Độ cứng vững (CV)</td>
+            <td>{{ holder.cv|default:"-" }}/10</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Độ chính xác gá kẹp (DX)</td>
+            <td>{{ holder.dx|default:"-" }}/10</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Chiều dài nhô dao (LD)</td>
+            <td>
+              {% if holder.ld %}
+                {{ holder.ld }} mm
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Tình trạng mòn (%)</td>
+            <td>{{ holder.mon|default:"-" }}%</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Tần suất sử dụng (lần/tháng)</td>
+            <td>{{ holder.tan_suat|default:"-" }}</td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

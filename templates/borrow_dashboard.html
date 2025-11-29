@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý mượn / xuất tool - TMS Web{% endblock %}
+
+{% block extra_css %}
+<style>
+  .borrow-page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 8px 0 32px;
+  }
+
+  /* ===== HEADER TRANG ===== */
+  .bp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+  }
+  .bp-title-block {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+  }
+  .bp-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blue-strong);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+  }
+  .bp-sub {
+      font-size: 13px;
+      color: #6b7280;
+  }
+
+  .bp-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+  }
+  .btn-history {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      font-size: 13px;
+      text-decoration: none;
+      color: #374151;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.1s, border-color 0.15s;
+  }
+  .btn-history span {
+      font-size: 15px;
+  }
+  .btn-history:hover {
+      background: var(--blue-soft);
+      border-color: var(--blue-tech);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+      transform: translateY(-1px);
+  }
+
+  /* ===== CARD (đồng bộ style với search-card) ===== */
+  .bp-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 18px 18px 14px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+      border: 1px solid #e5e7eb;
+      margin-bottom: 24px;
+  }
+  .bp-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+  }
+  .bp-card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--blue-strong);
+  }
+  .bp-card-sub {
+      font-size: 12px;
+      color: #6b7280;
+  }
+  .bp-card-right {
+      font-size: 12px;
+      color: #9ca3af;
+      white-space: nowrap;
+  }
+
+  /* ===== TABLE ===== */
+  .bp-table-wrapper {
+      border-radius: 18px;
+      border: 1px solid #e5e7eb;
+      overflow: auto;
+      max-height: 420px;
+  }
+  table.bp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+  }
+  .bp-table th,
+  .bp-table td {
+      padding: 8px 11px;
+      border-bottom: 1px solid #f3f4f6;
+      white-space: nowrap;
+  }
+  .bp-table th {
+      background: #f9fafb;
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+  }
+  .bp-table tbody tr:nth-child(even) {
+      background: #f9fafb;
+  }
+  .bp-table tbody tr:hover {
+      background: #eff6ff;
+  }
+
+  .bp-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: var(--blue-soft);
+      color: var(--blue-strong);
+  }
+
+  /* ===== BUTTON NHỎ (theo màu xanh hệ thống) ===== */
+  .btn-small {
+      padding: 6px 10px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid var(--blue-tech);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--blue-tech);
+      color: #0f172a;
+      font-weight: 600;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.05s, color 0.15s;
+  }
+  .btn-small:hover {
+      background: #0ea5e9;
+      box-shadow: 0 4px 10px rgba(56, 189, 248, 0.35);
+      transform: translateY(-1px);
+  }
+  .btn-small.neutral {
+      background: #f9fafb;
+      border-color: #d1d5db;
+      color: #111827;
+      font-weight: 500;
+  }
+  .btn-small.neutral:hover {
+      background: #e5e7eb;
+      box-shadow: 0 4px 10px rgba(107, 114, 128, 0.25);
+  }
+
+  @media (max-width: 640px) {
+      .bp-header {
+          flex-direction: column;
+          align-items: flex-start;
+      }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="borrow-page">
+
+    <!-- HEADER -->
+    <div class="bp-header">
+        <div class="bp-title-block">
+            <div class="bp-title">Quản lý mượn / xuất tool</div>
+            <p class="bp-sub">
+                Holder là đối tượng mượn / trả. Tool tiêu hao chủ yếu xuất 1 chiều để trừ tồn kho.
+            </p>
+        </div>
+
+        <div class="bp-actions">
+            <a href="{% url 'holder_muontra:history_holder' %}" class="btn-history">
+                👤 <span>Lịch sử Holder</span>
+            </a>
+            <a href="{% url 'tool_muontra:history_tool' %}" class="btn-history">
+                🛠️ <span>Lịch sử Tool</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== BẢNG TOOL (TRÊN) ===== -->
+    <div class="bp-card">
+        <div class="bp-card-header">
+            <div>
+                <div class="bp-card-title">Danh sách Tool</div>
+                <div class="bp-card-sub">
+                    Dụng cụ / tiêu hao – xin xuất kho 1 chiều, dùng để theo dõi tồn.
+                </div>
+            </div>
+            <div class="bp-card-right">
+                Tổng: {{ tools|length }} tool
+            </div>
+        </div>
+
+        <div class="bp-table-wrapper">
+            <table class="bp-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Tên tool</th>
+                    <th>Nhóm</th>
+                    <th>Tồn</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for tool in tools %}
+                    <tr>
+                        <td>{{ tool.ma_tool }}</td>
+                        <td>{{ tool.ten_tool }}</td>
+                        <td>{{ tool.nhom_tool }}</td>
+                        <td>
+                            <span class="bp-badge">
+                                {{ tool.ton_kho|default:"-" }}
+                            </span>
+                        </td>
+                        <td>
+                            <!-- Xin xuất kho tool -->
+                            <a href="{% url 'tool_muontra:tool_transaction_create' tool.id %}" class="btn-small">
+                                📦 Xin xuất kho
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">Chưa có tool nào.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== BẢNG HOLDER (DƯỚI) ===== -->
+    <div class="bp-card">
+        <div class="bp-card-header">
+            <div>
+                <div class="bp-card-title">Danh sách Holder</div>
+                <div class="bp-card-sub">
+                    Chọn holder để xuất tool hoặc xử lý trả / đóng phiếu.
+                </div>
+            </div>
+            <div class="bp-card-right">
+                Tổng: {{ holders|length }} holder
+            </div>
+        </div>
+
+        <div class="bp-table-wrapper">
+            <table class="bp-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Tên holder</th>
+                    <th>Nhóm</th>
+                    <th>Độ bền</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for holder in holders %}
+                    <tr>
+                        <td>{{ holder.ma_noi_bo }}</td>
+                        <td>{{ holder.ten_thiet_bi }}</td>
+                        <td>{{ holder.nhom_thiet_bi }}</td>
+                             <!-- 👉 HIỂN THỊ ĐỘ BỀN HIỆN TẠI TỪ HOLDER.MON -->
+                    <td>
+                        {% if holder.mon is not None %}
+                            <span class="bp-badge">
+                                {{ holder.mon }}%
+                            </span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                        <td>{{ holder.get_trang_thai_tai_san_display }}</td>
+                    
+                        <td>
+                            {% if holder.trang_thai_tai_san == "dang_su_dung" %}
+                                {# Chỉ hiện nút mượn khi đang sẵn sàng #}
+                                <a href="{% url 'holder_muontra:borrow_for_holder' holder.id %}" class="btn-small">
+                                    ➕ Mượn tool
+                                </a>
+                            {% else %}
+                                {# Các trạng thái khác: chỉ hiện nút trả / đóng #}
+                                <a href="{% url 'holder_muontra:return_for_holder' holder.id %}"
+                                class="btn-small neutral">
+                                    ↩️ Trả / đóng
+                                </a>
+                            {% endif %}
+</td>
+         <td>
+                        <span class="bp-badge">
+                            {{ holder.danh_gia_gan_nhat|default:"-" }}
+                        </span>
+                    </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5">Chưa có holder nào.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử giao dịch Tool{% endblock %}
+
+{% block content %}
+<div style="max-width:1120px;margin:20px auto;">
+
+    <!-- Header -->
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:6px;">
+        Lịch sử giao dịch Tool
+    </h2>
+    <p style="color:#6b7280;margin-bottom:20px;">
+        Theo dõi toàn bộ giao dịch xuất – nhập – trả của tất cả tool.
+    </p>
+
+    <!-- Bộ lọc tìm kiếm -->
+    <form method="get" style="margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;">
+
+        <!-- Tìm kiếm -->
+        <input 
+            type="text" 
+            name="q" 
+            value="{{ q }}"
+            placeholder="Tìm theo mã tool, tên tool, mã dự án…" 
+            style="
+                flex:1;min-width:260px;
+                padding:10px 14px;
+                border-radius:10px;
+                border:1px solid #d1d5db;
+            "
+        />
+
+        <!-- Loại giao dịch -->
+        <select 
+            name="loai" 
+            style="padding:10px 14px;border-radius:10px;border:1px solid #d1d5db;"
+        >
+            <option value="">-- Loại giao dịch --</option>
+            {% for value, label in loai_choices %}
+                <option value="{{ value }}" {% if loai == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button 
+            type="submit" 
+            style="
+                background:#38bdf8;
+                color:#0f172a;
+                padding:10px 22px;
+                border-radius:10px;
+                font-weight:600;
+                border:none;
+                cursor:pointer;
+            "
+        >
+            Lọc
+        </button>
+    </form>
+
+    <!-- Bảng lịch sử -->
+    <div style="
+        background:white;
+        padding:20px;
+        border:1px solid #e5e7eb;
+        border-radius:16px;
+        box-shadow:0 4px 14px rgba(0,0,0,0.06);
+    ">
+
+        <table style="width:100%;border-collapse:collapse;">
+            <thead>
+                <tr style="background:#f1f5f9;">
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Time</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Tool</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Loại</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Số lượng</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Tồn trước → sau</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Mã dự án</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Người thực hiện</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% if transactions %}
+                {% for t in transactions %}
+                <tr>
+                    <td style="padding:10px;font-size:13px;color:#475569;">
+                        {{ t.created_at|date:"d/m/Y H:i" }}
+                    </td>
+                    <td style="padding:10px;">
+                        <strong>{{ t.tool.ma_tool }}</strong><br>
+                        <span style="color:#6b7280;font-size:13px;">
+                            {{ t.tool.ten_tool }}
+                        </span>
+                    </td>
+                    <td style="padding:10px;font-weight:600;">
+                        {{ t.get_loai_display }}
+                    </td>
+                    <td style="padding:10px;">
+                        {{ t.so_luong }}
+                    </td>
+                    <td style="padding:10px;font-size:14px;">
+                        {{ t.ton_truoc }} → <strong>{{ t.ton_sau }}</strong>
+                    </td>
+                    <td style="padding:10px;">
+                        {{ t.ma_du_an|default:"—" }}
+                    </td>
+                    <td style="padding:10px;font-size:13px;color:#475569;">
+                        {{ t.nguoi_thuc_hien|default:"—" }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="7" style="padding:16px;text-align:center;color:#94a3b8;">
+                        Không có giao dịch nào.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+    </div>
+</div>
+{% endblock %}

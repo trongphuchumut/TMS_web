@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Lịch sử sử dụng Holder{% endblock %}
+
+{% block content %}
+<div style="max-width:1120px;margin:20px auto;">
+
+  <!-- HEADER -->
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:6px;">
+    Lịch sử mượn / trả Holder
+  </h2>
+  <p style="color:#6b7280;margin-bottom:18px;">
+    Theo dõi thời gian sử dụng, mục đích (sử dụng / bảo trì) và độ bền trước / sau cho từng holder.
+  </p>
+
+  <!-- BỘ LỌC -->
+  <form method="get" style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;">
+
+    <!-- Từ khóa -->
+    <input
+      type="text"
+      name="q"
+      value="{{ q }}"
+      placeholder="Tìm theo mã nội bộ, tên thiết bị, dự án…"
+      style="
+        flex:1;
+        min-width:260px;
+        padding:8px 12px;
+        border-radius:10px;
+        border:1px solid #d1d5db;
+      "
+    />
+
+    <!-- Mục đích -->
+    <select
+      name="muc_dich"
+      style="
+        padding:8px 12px;
+        border-radius:10px;
+        border:1px solid #d1d5db;
+      "
+    >
+      <option value="">-- Mục đích --</option>
+      {% for value,label in MUC_DICH_CHOICES %}
+        <option value="{{ value }}" {% if muc_dich == value %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Trạng thái -->
+    <select
+      name="trang_thai"
+      style="
+        padding:8px 12px;
+        border-radius:10px;
+        border:1px solid #d1d5db;
+      "
+    >
+      <option value="">-- Trạng thái --</option>
+      {% for value,label in TRANG_THAI_CHOICES %}
+        <option value="{{ value }}" {% if trang_thai == value %}selected{% endif %}>
+          {{ label }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <button
+      type="submit"
+      style="
+        padding:8px 18px;
+        border-radius:10px;
+        border:none;
+        background:#38bdf8;
+        color:#0f172a;
+        font-weight:600;
+        cursor:pointer;
+      "
+    >
+      Lọc
+    </button>
+  </form>
+
+  <!-- BẢNG LỊCH SỬ -->
+  <div style="
+    background:#ffffff;
+    border-radius:16px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 4px 14px rgba(15,23,42,0.06);
+    overflow:auto;
+  ">
+    <table style="width:100%;border-collapse:collapse;min-width:960px;">
+      <thead>
+        <tr style="background:#f1f5f9;">
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Holder</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Mục đích</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Dự án</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Thời gian mượn</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Thời gian trả</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Thời lượng (phút)</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Độ bền trước → sau (%)</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Trạng thái</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:left;">Người thực hiện</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if histories %}
+          {% for h in histories %}
+          <tr>
+            <!-- Holder -->
+            <td style="padding:10px;font-size:13px;">
+              <strong>{{ h.ma_noi_bo_snapshot|default:h.holder.ma_noi_bo }}</strong><br>
+              <span style="color:#6b7280;">
+                {{ h.ten_thiet_bi_snapshot|default:h.holder.ten_thiet_bi }}
+              </span>
+            </td>
+
+            <!-- Mục đích -->
+            <td style="padding:10px;font-size:13px;font-weight:600;">
+              {{ h.get_muc_dich_display }}
+            </td>
+
+            <!-- Dự án -->
+            <td style="padding:10px;font-size:13px;">
+              {{ h.du_an|default:"—" }}
+            </td>
+
+            <!-- Thời gian mượn -->
+            <td style="padding:10px;font-size:13px;color:#475569;">
+              {{ h.thoi_gian_muon|date:"d/m/Y H:i" }}
+            </td>
+
+            <!-- Thời gian trả -->
+            <td style="padding:10px;font-size:13px;color:#475569;">
+              {% if h.thoi_gian_tra %}
+                {{ h.thoi_gian_tra|date:"d/m/Y H:i" }}
+              {% else %}
+                <span style="color:#f97316;">Chưa trả</span>
+              {% endif %}
+            </td>
+
+            <!-- Thời lượng -->
+            <td style="padding:10px;font-size:13px;">
+              {% if h.thoi_luong_phut %}
+                {{ h.thoi_luong_phut }} phút
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <!-- Độ bền trước → sau -->
+            <td style="padding:10px;font-size:13px;">
+              {% if h.mon_truoc is not None or h.mon_sau is not None %}
+                {{ h.mon_truoc|default_if_none:"?" }} →
+                <strong>{{ h.mon_sau|default_if_none:"?" }}</strong>
+              {% else %}
+                —
+              {% endif %}
+            </td>
+
+            <!-- Trạng thái -->
+            <td style="padding:10px;font-size:13px;">
+              {% if h.trang_thai == "DANG_MUON" %}
+                <span style="padding:2px 8px;border-radius:999px;font-size:12px;background:#fee2e2;color:#b91c1c;">
+                  Đang mượn
+                </span>
+              {% else %}
+                <span style="padding:2px 8px;border-radius:999px;font-size:12px;background:#dcfce7;color:#166534;">
+                  Đã trả
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Người thực hiện -->
+            <td style="padding:10px;font-size:13px;color:#475569;">
+              {{ h.nguoi_thuc_hien|default:"—" }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" style="padding:14px;text-align:center;color:#94a3b8;">
+              Chưa có lịch sử mượn / trả nào.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,444 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - TMS Solutions</title>
+    <link rel="icon" href="{% static 'logo_TMS.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --clr-bg: #e8f0ff;
+            --clr-surface: #ffffff;
+            --clr-border: #cdd9ff;
+            --clr-border-strong: #a8baff;
+            --clr-primary: #1e40af;
+            --clr-primary-soft: #d6e2ff;
+            --clr-text-main: #0f1a40;
+            --clr-text-muted: #4b587a;
+            --shadow-sm: 0 1px 3px rgba(30, 64, 175, 0.15);
+            --shadow-md: 0 10px 30px rgba(30, 64, 175, 0.18);
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --transition: all 0.2s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at top left, #e0ecff 0, transparent 55%),
+                        radial-gradient(circle at bottom right, #e5f9ff 0, transparent 55%),
+                        #eef2ff;
+            color: var(--clr-text-main);
+        }
+
+        .page-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            margin: 32px auto 40px;
+            padding: 24px 32px 32px;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: var(--shadow-md);
+            margin-top: 120px;
+        }
+
+        /* Header */
+        .header {
+            width: 100%;
+            background: #ffffff;
+            padding: 14px 28px;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 10px; }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        .header-logo img {
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--clr-border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2563eb;
+        }
+
+        .header-sub {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.12em;
+        }
+
+        .header-btn {
+            border-radius: 999px;
+            border: 1px solid #d1d5db;
+            background: #f9fafb;
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #2563eb;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+        }
+
+        .header-btn i { font-size: 13px; color: var(--clr-primary); }
+
+        .header-btn:hover {
+            background: #eff6ff;
+            border-color: #2563eb;
+            box-shadow: 0 0 6px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Layout */
+        .content {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            gap: 40px;
+            align-items: center;
+            min-height: 420px;
+        }
+
+        .hero-panel {
+            padding-right: 0;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .hero-title span {
+            color: var(--clr-primary);
+            background: linear-gradient(90deg, #1e40af, #3b82f6, #1e40af);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: title-glow 4s linear infinite;
+        }
+
+        .hero-desc {
+            font-size: 14px;
+            color: var(--clr-text-muted);
+            max-width: 520px;
+            line-height: 1.5;
+            margin: 0 auto;
+        }
+
+        .hero-meta {
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 11px;
+            justify-content: center;
+        }
+
+        .hero-chip {
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--clr-border);
+            background: #ffffff;
+            color: var(--clr-text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+
+        /* Login card */
+        .login-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #dbe1ef;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.09);
+            padding: 28px 26px 24px;
+            max-width: 420px;
+            margin-left: auto;
+            
+        }
+
+        .login-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .login-header h2 i { color: var(--clr-primary); }
+
+        .login-sub {
+            font-size: 12px;
+            color: var(--clr-text-muted);
+            margin-bottom: 14px;
+        }
+
+        .messages {
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: var(--clr-error-bg);
+            border: 1px solid var(--clr-error-border);
+            color: var(--clr-error-text);
+            font-size: 12px;
+            margin-bottom: 16px;
+        }
+
+        .input-group { position: relative; margin-bottom: 18px; }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--clr-border-strong);
+            background: #f9fafb;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .input-group input::placeholder { color: transparent; }
+
+        .input-group label {
+            position: absolute;
+            left: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 13px;
+            color: var(--clr-text-muted);
+            transition: var(--transition);
+        }
+
+        .input-group .icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--clr-text-muted);
+            font-size: 14px;
+        }
+
+        .input-group input:focus {
+            border-color: var(--clr-primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 1px var(--clr-primary-soft);
+        }
+
+        .input-group input:focus + label,
+        .input-group input:not(:placeholder-shown) + label {
+            top: 4px;
+            font-size: 11px;
+            color: var(--clr-primary);
+        }
+
+        .field-extra {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--clr-text-muted);
+            margin-bottom: 16px;
+        }
+
+        .field-extra .remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .field-extra input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            accent-color: var(--clr-primary);
+        }
+
+        .field-extra a { color: var(--clr-primary); text-decoration: none; }
+
+        .field-extra a:hover { text-decoration: underline; }
+
+        .btn {
+            width: 100%;
+            border-radius: 999px;
+            border: none;
+            padding: 11px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--clr-primary);
+            color: white;
+            cursor: pointer;
+        }
+
+        .login-footer {
+            margin-top: 14px;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--clr-text-muted);
+        }
+
+        @keyframes title-glow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .page-wrapper {
+                margin: 16px auto 24px;
+                padding: 0 16px 24px;
+            }
+
+            .content {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 24px;
+                display: flex;
+    align-items: center;
+    margin-top: 120px;
+            }
+
+            .hero-panel {
+                padding-right: 0;
+            }
+
+            .login-card {
+                max-width: 100%;
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .hero-title {
+                font-size: 22px;
+            }
+
+            .hero-desc {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .hero-panel {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrapper">
+
+    <header class="header">
+        <div class="header-left">
+            <a href="{% url 'home' %}" class="header-logo">
+                <img src="{% static 'logo_TMS.png' %}" alt="Logo TMS">
+                <div>
+                    <div class="header-title">TMS Solutions</div>
+                    <div class="header-sub">Tool Management System - Quản lý công cụ</div>
+                </div>
+            </a>
+        </div>
+
+        <a href="{% url 'contact' %}" class="header-btn">
+            <i class="fas fa-envelope"></i>
+            <span>Liên hệ hỗ trợ</span>
+        </a>
+    </header>
+
+    <div class="content">
+        <section class="hero-panel">
+            <h1 class="hero-title">Đăng nhập hệ thống <span>TMS Web</span></h1>
+            <p class="hero-desc">Cổng truy cập hệ thống quản lý công cụ (Tool Management System - TMS) cho đơn vị của bạn.</p>
+        </section>
+
+       <section class="login-card">
+    <div class="login-header">
+        <h2><i class="fas fa-user-lock"></i> Đăng nhập</h2>
+        <p class="login-sub">Sử dụng tài khoản được cấp để truy cập hệ thống.</p>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for msg in messages %}
+            <div>• {{ msg }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% url 'login' %}" autocomplete="on">
+        {% csrf_token %}
+
+                <div class="input-group">
+                    <input type="text" id="username" name="username" placeholder=" " required autocomplete="username" autofocus>
+                    <label for="username">Tên đăng nhập</label>
+                    <i class="fas fa-user icon"></i>
+                </div>
+
+                <div class="input-group">
+                    <input type="password" id="password" name="password" placeholder=" " required autocomplete="current-password">
+                    <label for="password">Mật khẩu</label>
+                    <i class="fas fa-lock icon"></i>
+                </div>
+
+                <div class="field-extra">
+                    <label class="remember">
+                        <input type="checkbox" name="remember_me">
+                        <span>Ghi nhớ đăng nhập</span>
+                    </label>
+                    <a href="{% url 'password_reset' %}">Quên mật khẩu?</a>
+                </div>
+
+                <button type="submit" class="btn">
+                    <i class="fas fa-sign-in-alt"></i> Đăng nhập
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span>© {% now "Y" %} TMS Solutions</span>
+                <a href="#">Điều khoản & bảo mật</a>
+            </div>
+        </section>
+    </div>
+</div>
+</body>
+</html>

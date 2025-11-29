@@ -1,0 +1,317 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}TMS Web{% endblock %}</title>
+
+    <style>
+        :root {
+            /* Đồng bộ với trang login: nền sáng, điểm nhấn xanh dương */
+            --blue-tech: #38bdf8;
+            --blue-strong: #0f172a;
+            --blue-soft: #e0f2fe;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: #ffffff;
+            color: #0f172a;
+        }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 32px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        }
+        .left-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-box {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--blue-tech);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(56, 189, 248, 0.4);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            text-decoration: none;
+        }
+        .brand span { color: var(--blue-tech); }
+        .hamburger {
+            margin-left: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .hamburger:hover {
+            background: var(--blue-soft);
+            border-color: var(--blue-tech);
+        }
+        .hamburger span {
+            display: block;
+            width: 18px;
+            height: 2px;
+            background: #0f172a;
+            border-radius: 999px;
+            position: relative;
+            transition: 0.2s;
+        }
+        .hamburger span::before,
+        .hamburger span::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 18px;
+            height: 2px;
+            background: #0f172a;
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+        .hamburger span::before { top: -6px; }
+        .hamburger span::after { top: 6px; }
+
+        .right-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 14px;
+        }
+        .welcome-text { color: #4b5563; }
+        .welcome-text strong { color: #111827; }
+        .btn-logout,
+        .btn-login {
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid var(--blue-tech);
+            background: #ffffff;
+            color: var(--blue-strong);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-logout:hover,
+        .btn-login:hover {
+            background: var(--blue-tech);
+            color: #ffffff;
+        }
+
+        /* DASHBOARD NGANG (ẩn/hiện mượt ngay dưới header) */
+        .dashboard-menu {
+            position: sticky;
+            top: 60px; /* tùy header thực tế */
+            z-index: 15;
+            background: linear-gradient(90deg, #0f172a, var(--blue-tech));
+            padding: 0 32px;
+            display: flex;
+            gap: 18px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition:
+                max-height 0.28s ease,
+                opacity 0.22s ease,
+                transform 0.28s ease,
+                padding-top 0.2s ease,
+                padding-bottom 0.2s ease;
+        }
+        .dashboard-menu.open {
+            padding-top: 10px;
+            padding-bottom: 10px;
+            max-height: 80px;
+            opacity: 1;
+            transform: translateY(0);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+        }
+        .dashboard-item {
+            color: #e0f2fe;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 14px;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .dashboard-item:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+        }
+
+        main {
+            max-width: 1500px;
+            margin: 40px auto;
+            padding: 0 16px;
+        }
+
+        .search-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px 24px 48px;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .search-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+        .search-sub {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 26px;
+        }
+        .search-bar-wrapper { display: flex; justify-content: center; }
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 640px;
+            background: #f9fafb;
+            border-radius: 999px;
+            padding: 10px 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+        }
+        .search-icon { font-size: 18px; opacity: 0.7; }
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 15px;
+        }
+        .search-button {
+            border: none;
+            outline: none;
+            cursor: pointer;
+            border-radius: 999px;
+            padding: 8px 16px;
+            background: var(--blue-tech);
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .search-button:hover { background: #0ea5e9; }
+
+        footer {
+            text-align: center;
+            padding: 24px 0 16px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 640px) {
+            header { padding: 10px 16px; }
+            .hamburger { margin-left: 12px; }
+            .dashboard-menu { padding-left: 16px; padding-right: 16px; }
+            main { margin-top: 24px; }
+            .search-card { padding: 28px 16px 32px; }
+        }
+    </style>
+
+    {# Cho phép trang con thêm CSS riêng #}
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    {# ==== HEADER DÙNG CHUNG ==== #}
+    <header>
+        <div class="left-header">
+            <!-- Logo + TMS (click về trang chủ) -->
+            <a href="{% url 'home' %}" class="brand" title="Trang chủ TMS">
+                <div class="logo-box">T</div>
+                <span>TMS</span>&nbsp;Web
+            </a>
+            <!-- Nút hamburger toggle dashboard -->
+            <button class="hamburger" type="button" onclick="toggleDashboard()">
+                <span></span>
+            </button>
+        </div>
+        <div class="right-header">
+            {% if user.is_authenticated %}
+                <div class="welcome-text">
+                    Chào,&nbsp;<strong>{{ user.get_full_name|default:user.username }}</strong>
+                </div>
+                <form action="{% url 'logout' %}" method="post" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-logout">Đăng xuất</button>
+                </form>
+            {% else %}
+                <div class="welcome-text">Bạn chưa đăng nhập</div>
+                <a href="{% url 'login' %}" class="btn-login">Đăng nhập</a>
+            {% endif %}
+        </div>
+    </header>
+
+    {# ==== DASHBOARD DÙNG CHUNG ==== #}
+    <nav id="dashboardMenu" class="dashboard-menu">
+        <a href="{% url 'home' %}" class="dashboard-item">Tìm kiếm</a>
+        <a href="{% url 'holder:holder_list' %}" class="dashboard-item">Danh sách holder</a>
+        <a href="{% url 'tool:tool_list' %}" class="dashboard-item">Danh sách tool</a>
+        <a href="{% url 'khocongcu:kho_cong_cu' %}" class="dashboard-item">Kho công cụ</a>
+        <a href="{% url 'borrow_dashboard' %}" class="dashboard-item">Quản lý mượn/trả</a>
+    
+        <a href="#" class="dashboard-item">Quản lý công cụ</a>
+    </nav>
+
+    <main>
+        {% block content %}
+        {# Nội dung từng trang sẽ nhét vào đây #}
+        {% endblock %}
+    </main>
+
+    <footer>
+        © 2025 TMS Web · Hệ thống quản lý kho công cụ thông minh
+    </footer>
+
+    <script>
+        function toggleDashboard() {
+            var menu = document.getElementById("dashboardMenu");
+            menu.classList.toggle("open");
+        }
+    </script>
+     {% include "chatbot.html" %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

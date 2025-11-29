@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Danh sách Holder - TMS Web{% endblock %}
+
+{% block extra_css %}
+<style>
+/* OVERRIDE main chỉ cho trang này */
+main {
+  max-width: none;
+  width: 100%;
+  margin: 24px auto;
+  padding: 0 32px; /* cho giống header (padding 32px) */
+}
+
+/* Trang holder dùng full width bên trong main */
+.holder-page {
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 0 32px;
+}
+
+/* ===== HEADER ===== */
+.holder-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;  /* thêm cho đẹp */
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.holder-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.holder-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.holder-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+.holder-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+  .btn-outline-sm,
+  .btn-primary-sm {
+    border-radius: 999px;
+    font-size: 13px;
+    padding: 6px 14px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-outline-sm:hover {
+    background: #f9fafb;
+  }
+  .btn-primary-sm {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+  .btn-primary-sm:hover {
+    background: #1d4ed8;
+  }
+
+  /* ===== CARD & TABLE ===== */
+  .holder-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 28px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.05);
+  }
+
+  .holder-table-wrapper {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    overflow-x: auto;
+  }
+
+  table.holder-table {
+    width: 100%;
+    padding: 14px 18px;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 860px;
+  }
+
+  table.holder-table thead {
+    background: #f9fafb;
+  }
+
+  table.holder-table th {
+    padding: 10px 12px;
+    text-align: left;
+    color: #6b7280;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+  }
+
+  table.holder-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  .holder-name {
+    font-weight: 600;
+    color: #111827;
+  }
+  .holder-name-sub {
+    font-size: 11px;
+    color: #6b7280;
+  }
+
+  .text-muted {
+    color: #9ca3af;
+    font-size: 12px;
+  }
+
+  /* ===== BADGE TRẠNG THÁI ===== */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 999px;
+    font-weight: 500;
+  }
+  .status-dang_su_dung {
+    background: #dcfce7;
+    color: #166534;
+  }
+  .status-dang_bao_tri {
+    background: #fef3c7;
+    color: #92400e;
+  }
+  .status-ngung_su_dung {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .pill-small {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f3f4f6;
+    font-size: 11px;
+    color: #4b5563;
+  }
+  .table-row-clickable {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.table-row-clickable:hover {
+    background: #f3f4f6;
+}
+.main-content {
+    width: 100%;
+    max-width: none;
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="holder-page">
+  <!-- HEADER -->
+  <div class="holder-header">
+    <div class="holder-header-left">
+      <div class="holder-title">Danh sách Holder (Tủ / Ngăn / Vị trí)</div>
+      <p class="holder-sub">
+        Theo dõi nhanh thông tin gá kẹp, vị trí, trạng thái và thông số fuzzy của từng Holder.
+      </p>
+    </div>
+    <div class="holder-header-actions">
+      <button class="btn-outline-sm" type="button">
+        📥 Xuất Excel
+      </button>
+      <!-- Tạm thời để nút Thêm Holder không gọi URL Django để tránh lỗi NoReverseMatch -->
+      <button class="btn-primary-sm" type="button">
+        ➕ Thêm Holder
+      </button>
+    </div>
+  </div>
+
+  <!-- CARD + TABLE -->
+  <div class="holder-card">
+    <div class="holder-table-wrapper">
+      <table class="holder-table">
+        <thead>
+          <tr>
+            <th>Thiết bị / Mã</th>
+            <th>Loại holder</th>
+            <th>Vị trí (Tủ / Ngăn)</th>
+            <th>Nhà sản xuất</th>
+            <th>Máy ưu tiên</th>
+            <th>Trạng thái</th>
+            <th>Thông số fuzzy</th>
+            <th>Ngày nhập</th>
+          </tr>
+        </thead>
+        <tbody>
+  {% for h in holders %}
+            <tr class="table-row-clickable">
+
+              <td>
+                <a href="{% url 'holder:holder_detail' h.id %}" class="row-main-link">
+                  <div class="holder-name">{{ h.ten_thiet_bi }}</div>
+                  <div class="holder-name-sub">
+                    Mã nội bộ: <strong>{{ h.ma_noi_bo }}</strong>
+                  </div>
+                </a>
+              </td>
+
+              <td>
+                {% if h.loai_holder %}
+                  <span class="pill-small">{{ h.loai_holder }}</span>
+                {% else %}
+                  <span class="text-muted">Không rõ</span>
+                {% endif %}
+              </td>
+
+              <td>
+                <div><strong>Tủ:</strong> {{ h.tu|default:"-" }}</div>
+                <div><strong>Ngăn:</strong> {{ h.ngan|default:"-" }}</div>
+              </td>
+
+              <td>{{ h.nha_san_xuat|default:"-" }}</td>
+              <td>{{ h.may_uu_tien|default:"-" }}</td>
+
+              <td>
+                {% if h.trang_thai_tai_san %}
+                  <span class="status-badge status-{{ h.trang_thai_tai_san }}">
+                    {{ h.get_trang_thai_tai_san_display }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">Chưa đặt</span>
+                {% endif %}
+              </td>
+
+              <td>
+                CV: {{ h.cv|default:"-" }} |
+                DX: {{ h.dx|default:"-" }} |
+                Mòn: {{ h.mon|default:"-" }}%
+              </td>
+
+              <td>
+                {% if h.ngay_nhap_kho %}
+                  {{ h.ngay_nhap_kho|date:"d/m/Y" }}
+                {% else %}
+                  <span class="text-muted">-</span>
+                {% endif %}
+              </td>
+
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" style="text-align:center;color:#9ca3af;padding:16px;">
+                Chưa có Holder nào trong hệ thống.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

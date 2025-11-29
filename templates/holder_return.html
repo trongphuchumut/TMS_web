@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Trả holder - {{ holder.ma_noi_bo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hr-page {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 20px 0 40px;
+  }
+
+  .hr-card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 26px 28px 30px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  }
+
+  .hr-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--blue-strong);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+  }
+
+  .hr-sub {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 18px;
+  }
+
+  .hr-info-box {
+      background: #f1f5f9;
+      padding: 14px 16px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px dashed #cbd5e1;
+  }
+
+  .hr-label {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--blue-strong);
+      margin-bottom: 6px;
+      display: block;
+  }
+
+  .hr-input,
+  .hr-textarea,
+  .hr-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      font-size: 14px;
+  }
+
+  .hr-textarea {
+      height: 100px;
+      resize: none;
+  }
+
+  .hr-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px 20px;
+  }
+
+  .hr-row-full {
+      grid-column: 1 / -1;
+  }
+
+  .hr-submit {
+      padding: 10px 26px;
+      margin-top: 20px;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 999px;
+      background: var(--blue-tech);
+      color: #0f172a;
+      border: none;
+      cursor: pointer;
+      transition: 0.2s;
+  }
+
+  .hr-submit:hover {
+      background: #0ea5e9;
+      transform: translateY(-2px);
+  }
+
+  @media (max-width: 720px) {
+      .hr-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hr-page">
+  <div class="hr-card">
+
+      <div class="hr-title">Phiếu trả holder</div>
+      <div class="hr-sub">
+          Ghi nhận việc trả holder về kho. Hệ thống sẽ tính thời gian mượn và mức độ mòn.
+      </div>
+
+      <!-- THÔNG TIN HOLDER -->
+      <div class="hr-info-box">
+          <strong>{{ holder.ma_noi_bo }} — {{ holder.ten_thiet_bi }}</strong><br>
+          Trạng thái hiện tại: 
+          <strong>{{ holder.get_trang_thai_tai_san_display }}</strong><br>
+          Mòn hiện tại:
+          <strong>{{ holder.mon|default:"0" }}%</strong>
+      </div>
+
+      <form method="post">
+          {% csrf_token %}
+
+          <div class="hr-grid">
+
+              <div>
+                  <label class="hr-label">Lý do trả</label>
+                  <select name="ly_do_tra" class="hr-select" required>
+                      <option value="">— Chọn lý do —</option>
+                      <option value="ket_thuc">Kết thúc sử dụng</option>
+                      <option value="bao_tri_xong">Trả sau bảo trì</option>
+                  </select>
+              </div>
+
+              <div>
+                  <label class="hr-label">Người trả</label>
+                  <input class="hr-input" type="text"
+                         value="{{ request.user.get_full_name|default:request.user.username }}" readonly>
+              </div>
+
+              <div class="hr-row-full">
+                  <label class="hr-label">Ghi chú thêm</label>
+                  <textarea name="mo_ta_tra" class="hr-textarea"
+                            placeholder="VD: Tình trạng sau sử dụng, yêu cầu kiểm tra thêm…"></textarea>
+              </div>
+
+          </div>
+
+          <button type="submit" class="hr-submit">Xác nhận trả holder</button>
+
+      </form>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,654 @@
+{% extends "base.html" %}
+
+{% block title %}Kho công cụ - TMS Web{% endblock %}
+
+{% block extra_css %}
+<style>
+  .tool-layout {
+    max-width: 1520px;
+    margin: 0 auto;
+  }
+
+  .tool-header {
+    margin-bottom: 16px;
+  }
+  .tool-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .tool-sub {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #6b7280;
+  }
+
+  .tool-card {
+    background: #ffffff;
+    border-radius: 26px;
+    padding: 26px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+  }
+
+  .tool-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .tool-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .tool-pill {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+  }
+  .tool-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tool-filter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    font-size: 12px;
+    color: #4b5563;
+  }
+  .tool-filter span.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+  }
+  .dot-ok { background: #22c55e; }
+  .dot-loan { background: #facc15; }
+  .dot-error { background: #ef4444; }
+
+  .tool-cabinets {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  /* ====== TỦ ====== */
+  .cabinet {
+    border-radius: 20px;
+    border: 2px solid #e5e7eb;
+    background: #fafafa;
+    padding: 16px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: 0.2s ease;
+  }
+
+  /* highlight tủ A */
+  .cabinet.highlight {
+    border-color: #3b82f6;
+    background: #e8f1ff;
+    box-shadow: 0 0 10px rgba(59,130,246,0.25);
+  }
+
+  .cabinet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 15px;
+  }
+  .cabinet-title {
+    font-weight: 700;
+    font-size: 17px;
+    color: #0f172a;
+  }
+  .cabinet-meta {
+    font-size: 12px;
+    color: #9ca3af;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 10px;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+  }
+
+  /* ====== NGĂN ====== */
+  .cell {
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    background: #f9fafb;
+    padding: 10px 6px 12px;
+    height: 110px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.15s ease-out;
+  }
+  .cell:hover {
+    transform: translateY(-2px);
+    background: #eff6ff;
+    border-color: #93c5fd;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  }
+
+  .cell-code {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+    color: #2563eb;
+  }
+  .cell-name {
+    font-size: 13px;
+    text-align: center;
+    color: #374151;
+    margin-top: 4px;
+    min-height: 32px;
+  }
+  .cell-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    gap: 6px;
+  }
+    /* Ô chứa 2 loại (chỉ dùng cho ngăn 7-8-9) */
+  .cell.dual {
+    height: 140px;              /* cao hơn chút */
+    padding: 8px 6px 10px;
+  }
+
+  .cell-dual-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .dual-item-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #374151;
+  }
+
+  .dual-item-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+  }
+
+  .dual-item-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dual-tag {
+    margin-top: 4px;
+    font-size: 10px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #9ca3af;
+  }
+
+  /* Hàng cuối vẫn giữ màu vàng */
+  .row-last {
+    background: #fff8d8 !important;
+    border-color: #facc15 !important;
+  }
+
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+  .status-ok   { background: #22c55e; }
+  .status-loan { background: #facc15; }
+  .status-error{ background: #ef4444; }
+
+  .status-text {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #9ca3af;
+  }
+
+  /* highlight hàng cuối (7–9) */
+  .row-last {
+    background: #fff8d8 !important;
+    border-color: #facc15 !important;
+  }
+
+  /* POPUP */
+  .popup-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 40;
+  }
+  .popup-backdrop.show {
+    display: flex;
+  }
+  .popup {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+    padding: 18px 20px 16px;
+    width: 360px;
+    max-width: calc(100% - 40px);
+  }
+  .popup-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .popup-code {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #0f172a;
+  }
+  .popup-sub {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #6b7280;
+  }
+  .popup-close {
+    border: none;
+    background: #f3f4f6;
+    color: #4b5563;
+    border-radius: 999px;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .popup-close:hover {
+    background: #e5e7eb;
+  }
+  .popup-name {
+    font-size: 14px;
+    color: #111827;
+    margin-bottom: 4px;
+  }
+  .popup-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #4b5563;
+    margin-bottom: 4px;
+  }
+  .popup-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+  }
+  .popup-status-label {
+    font-weight: 500;
+  }
+  .popup-qty {
+    font-size: 12px;
+    color: #4b5563;
+  }
+  .popup-link {
+    margin-top: 8px;
+    font-size: 12px;
+  }
+  .popup-link a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  .popup-link a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .tool-cabinets {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tool-layout">
+  <div class="tool-header">
+    <div class="tool-title">Kho công cụ</div>
+    <div class="tool-sub">3 tủ · mỗi tủ 9 ngăn · nhấp vào từng ô để xem chi tiết vật tư</div>
+  </div>
+
+  <div class="tool-card">
+    <div class="tool-toolbar">
+      <div class="tool-toolbar-left">
+        <div class="tool-pill">Tủ A · Tủ B · Tủ C</div>
+      </div>
+      <div class="tool-toolbar-right">
+        <div class="tool-filter">
+          <span class="dot status-ok"></span><span>Còn trong kho</span>
+        </div>
+        <div class="tool-filter">
+          <span class="dot status-loan"></span><span>Đang cho mượn (chưa dùng)</span>
+        </div>
+        <div class="tool-filter">
+          <span class="dot status-error"></span><span>Hết / thiếu hàng</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-cabinets">
+      <!-- Tủ A được highlight -->
+      <div class="cabinet highlight">
+        <div class="cabinet-header">
+          <div class="cabinet-title">Tủ A</div>
+          <div class="cabinet-meta">Ngăn A1 – A9</div>
+        </div>
+        <div class="grid" id="cabinet-a"></div>
+      </div>
+
+      <div class="cabinet">
+        <div class="cabinet-header">
+          <div class="cabinet-title">Tủ B</div>
+          <div class="cabinet-meta">Ngăn B1 – B9</div>
+        </div>
+        <div class="grid" id="cabinet-b"></div>
+      </div>
+
+      <div class="cabinet">
+        <div class="cabinet-header">
+          <div class="cabinet-title">Tủ C</div>
+          <div class="cabinet-meta">Ngăn C1 – C9</div>
+        </div>
+        <div class="grid" id="cabinet-c"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Popup -->
+<div class="popup-backdrop" id="popup-backdrop">
+  <div class="popup">
+    <div class="popup-top">
+      <div>
+        <div class="popup-code" id="popup-code">NGĂN A1</div>
+        <div class="popup-sub">THÔNG TIN VẬT TƯ</div>
+      </div>
+      <button class="popup-close" type="button" id="popup-close">&times;</button>
+    </div>
+    <div class="popup-name" id="popup-name">Tên vật tư</div>
+    <div class="popup-status-row">
+      <span class="popup-status-dot" id="popup-status-dot"></span>
+      <span class="popup-status-label" id="popup-status-label">Trạng thái</span>
+    </div>
+    <div class="popup-qty" id="popup-qty">Số lượng: -</div>
+    <div class="popup-link" id="popup-link"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Lấy dữ liệu đồ vật (tool + holder) từ view
+  const itemData = JSON.parse('{{ items_json|escapejs }}');
+
+  function statusClass(status) {
+    switch (status) {
+      case "ok":    return "status-ok";
+      case "loan":  return "status-loan";
+      case "error": return "status-error";
+      default:      return "";
+    }
+  }
+
+  function statusText(status) {
+    switch (status) {
+      case "ok":    return "Còn trong kho";
+      case "loan":  return "Đang cho mượn";
+      case "error": return "Hết / thiếu hàng";
+      default:      return "Không rõ";
+    }
+  }
+
+    function buildCabinet(prefix, containerId) {
+    const container = document.getElementById(containerId);
+    for (let i = 1; i <= 9; i++) {
+      const code = prefix + i;
+      const raw = itemData[code] || {
+        name: "Chưa khai báo",
+        status: "unknown",
+        qty: null,
+        url: null
+      };
+
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cell";
+      cell.dataset.code = code;
+
+      // hàng cuối: 7–9 => thêm class row-last
+      if (i >= 7) {
+        cell.classList.add("row-last");
+      }
+
+      // CODE NGĂN
+      const codeEl = document.createElement("div");
+      codeEl.className = "cell-code";
+      codeEl.textContent = code;
+      cell.appendChild(codeEl);
+
+      // ====== CASE 1: 1 loại (format cũ) ======
+      if (!Array.isArray(raw.items)) {
+        const data = raw;
+
+        const nameEl = document.createElement("div");
+        nameEl.className = "cell-name";
+        nameEl.textContent = data.name;
+        cell.appendChild(nameEl);
+
+        const footer = document.createElement("div");
+        footer.className = "cell-footer";
+
+        const dot = document.createElement("span");
+        dot.className = "status-dot " + statusClass(data.status);
+        footer.appendChild(dot);
+
+        const stText = document.createElement("span");
+        stText.className = "status-text";
+        stText.textContent = statusText(data.status);
+        footer.appendChild(stText);
+
+        cell.appendChild(footer);
+
+        cell.addEventListener("click", () =>
+          openPopup(code, data.name, data.status, data.qty, data.url)
+        );
+      }
+      // ====== CASE 2: 2 loại (hàng 7–9) ======
+      else {
+        const items = raw.items;
+        cell.classList.add("dual");
+
+        const body = document.createElement("div");
+        body.className = "cell-dual-body";
+
+        items.slice(0, 2).forEach((it) => {
+          const row = document.createElement("div");
+          row.className = "dual-item-row";
+
+          const dot = document.createElement("span");
+          dot.className = "dual-item-dot " + statusClass(it.status);
+          row.appendChild(dot);
+
+          const label = document.createElement("span");
+          label.className = "dual-item-label";
+          label.textContent = it.label || it.name || "Chưa khai báo";
+          row.appendChild(label);
+
+          body.appendChild(row);
+        });
+
+        cell.appendChild(body);
+
+        const tag = document.createElement("div");
+        tag.className = "dual-tag";
+        tag.textContent = items.length + " loại vật tư";
+        cell.appendChild(tag);
+
+        // click: mở popup tổng hợp
+        cell.addEventListener("click", () => {
+          openPopupMulti(code, items);
+        });
+      }
+
+      container.appendChild(cell);
+    }
+  }
+
+  
+
+  buildCabinet("A", "cabinet-a");
+  buildCabinet("B", "cabinet-b");
+  buildCabinet("C", "cabinet-c");
+
+  // Popup
+  const popupBackdrop    = document.getElementById("popup-backdrop");
+  const popupCloseBtn    = document.getElementById("popup-close");
+  const popupCode        = document.getElementById("popup-code");
+  const popupName        = document.getElementById("popup-name");
+  const popupStatusDot   = document.getElementById("popup-status-dot");
+  const popupStatusLabel = document.getElementById("popup-status-label");
+  const popupQty         = document.getElementById("popup-qty");
+  const popupLink        = document.getElementById("popup-link");
+
+  function openPopupMulti(code, items) {
+    popupCode.textContent = "NGĂN " + code;
+
+    // Không gộp tên nữa -> để trống phần popup-name
+    popupName.textContent = "Danh sách vật tư trong ngăn:";
+
+    // Bỏ trạng thái tổng
+    popupStatusDot.style.background = "transparent";
+    popupStatusLabel.textContent = "";
+
+    // Tổng tồn
+    const totalQty = items
+      .map(it => Number(it.qty) || 0)
+      .reduce((a, b) => a + b, 0);
+
+    popupQty.textContent = "Tổng số lượng tồn: " + (totalQty || "-");
+
+    // RENDER TỪNG MÓN + TRẠNG THÁI
+    let html = "";
+    items.forEach(it => {
+        let color =
+            it.status === "ok"    ? "#22c55e" :
+            it.status === "loan"  ? "#facc15" :
+            it.status === "error" ? "#ef4444" :
+                                    "#9ca3af";
+
+        html += `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span style="width:10px;height:10px;border-radius:999px;background:${color};"></span>
+            ${it.url 
+                ? `<a href="${it.url}" style="color:#2563eb;text-decoration:none;">${it.label}</a>`
+                : `<span>${it.label}</span>`}
+        </div>
+        `;
+    });
+
+    popupLink.innerHTML = html;
+
+    popupBackdrop.classList.add("show");
+}
+
+
+  function closePopup() {
+    popupBackdrop.classList.remove("show");
+  }
+
+  popupCloseBtn.addEventListener("click", closePopup);
+  popupBackdrop.addEventListener("click", (e) => {
+    if (e.target === popupBackdrop) closePopup();
+  });
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closePopup();
+  });
+    function openPopupMulti(code, items) {
+    popupCode.textContent = "NGĂN " + code;
+
+    // Tên: gộp lại
+    popupName.textContent = items
+      .map((it) => it.label || it.name)
+      .join(" / ");
+
+    // Lấy status “nặng” nhất để color: error > loan > ok
+    let s = "unknown";
+    if (items.some(it => it.status === "error")) s = "error";
+    else if (items.some(it => it.status === "loan")) s = "loan";
+    else if (items.some(it => it.status === "ok")) s = "ok";
+
+    const color =
+      s === "ok"    ? "#22c55e" :
+      s === "loan"  ? "#facc15" :
+      s === "error" ? "#ef4444" :
+                      "#9ca3af";
+    popupStatusDot.style.background = color;
+    popupStatusLabel.textContent = statusText(s);
+
+    // Tổng tồn
+    const totalQty = items
+      .map(it => Number(it.qty) || 0)
+      .reduce((a, b) => a + b, 0);
+
+    popupQty.textContent = "Tổng số lượng tồn: " + (totalQty || "-");
+
+    // Link: liệt kê từng item
+    popupLink.innerHTML = items
+      .map((it) => {
+        if (!it.url) return it.label || it.name || "Không rõ";
+        return '<a href="' + it.url + '">' + (it.label || it.name) + "</a>";
+      })
+      .join("<br>");
+
+    popupBackdrop.classList.add("show");
+  }
+
+</script>
+{% endblock %}

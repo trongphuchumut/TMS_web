@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+
+{% block title %}Danh sách Tool tiêu hao - TMS Web{% endblock %}
+
+{% block extra_css %}
+<style>
+/* OVERRIDE main chỉ cho trang này */
+main {
+  max-width: none;
+  width: 100%;
+  margin: 24px auto;
+  padding: 0 32px; /* cho giống header (padding 32px) */
+}
+
+/* Trang holder dùng full width bên trong main */
+.holder-page {
+  max-width: 1120px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 0 32px;
+}
+/* ===== HEADER ===== */
+.holder-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.holder-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.holder-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.holder-sub {
+  font-size: 13px;
+  color: #6b7280;
+}
+.holder-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn-outline-sm,
+.btn-primary-sm {
+  border-radius: 999px;
+  font-size: 13px;
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-outline-sm:hover {
+  background: #f9fafb;
+}
+.btn-primary-sm {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.btn-primary-sm:hover {
+  background: #1d4ed8;
+}
+
+/* ===== CARD & TABLE ===== */
+.holder-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 28px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.05);
+}
+
+.holder-table-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+table.holder-table {
+  width: 100%;
+  padding: 14px 18px;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 860px;
+}
+
+table.holder-table thead {
+  background: #f9fafb;
+}
+
+table.holder-table th {
+  padding: 10px 12px;
+  text-align: left;
+  color: #6b7280;
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+table.holder-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  vertical-align: middle;
+}
+
+.holder-name {
+  font-weight: 600;
+  color: #111827;
+}
+.holder-name-sub {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.text-muted {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* ===== BADGE TỒN KHO ===== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+.status-safe {
+  background: #dcfce7;
+  color: #166534;
+}
+.status-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status-empty {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.pill-small {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  font-size: 11px;
+  color: #4b5563;
+}
+
+.table-row-clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.table-row-clickable:hover {
+  background: #f3f4f6;
+}
+
+.main-content {
+  width: 100%;
+  max-width: none;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* link trong ô chính */
+.row-main-link {
+  text-decoration: none;
+  color: inherit;
+}
+.row-main-link:hover .holder-name {
+  text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="holder-page">
+  <!-- HEADER -->
+  <div class="holder-header">
+    <div class="holder-header-left">
+      <div class="holder-title">Danh sách Tool tiêu hao</div>
+      <p class="holder-sub">
+        Theo dõi nhanh các tool dùng 1 lần: loại tool, nhà sản xuất, vị trí trong kho và mức tồn hiện tại.
+      </p>
+    </div>
+    <div class="holder-header-actions">
+      <button class="btn-outline-sm" type="button">
+        📥 Xuất Excel
+      </button>
+      <a class="btn-primary-sm" href="{% url 'tool:tool_create' %}">
+        ➕ Thêm Tool tiêu hao
+      </a>
+    </div>
+  </div>
+
+  <!-- CARD + TABLE -->
+  <div class="holder-card">
+    <div class="holder-table-wrapper">
+      <table class="holder-table">
+        <thead>
+          <tr>
+            <th>Tool / Mã</th>
+            <th>Nhóm / Dòng tool</th>
+            <th>Kích thước</th>
+            <th>Vị trí (Tủ / Ngăn)</th>
+            <th>Nhà sản xuất</th>
+            <th>Tồn kho</th>
+            <th>Trạng thái tồn kho</th>
+            <th>Ngày nhập</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for t in tools %}
+          <tr class="table-row-clickable" data-href="{% url 'tool:tool_profile' t.pk %}">
+
+            <!-- Tên + mã -->
+            <td>
+              <a href="{% url 'tool:tool_profile' t.pk %}" class="row-main-link">
+                <div class="holder-name">{{ t.ten_tool|default:"(Chưa có tên tool)" }}</div>
+                <div class="holder-name-sub">
+                  Mã tool: <strong>{{ t.ma_tool|default:"-" }}</strong>
+                </div>
+              </a>
+            </td>
+
+            <!-- Nhóm / dòng -->
+            <td>
+              {% if t.nhom_tool %}
+                <div><span class="pill-small">{{ t.nhom_tool }}</span></div>
+              {% else %}
+                <div><span class="text-muted">Chưa phân nhóm</span></div>
+              {% endif %}
+              {% if t.dong_tool %}
+                <div class="text-muted">Dòng: {{ t.dong_tool }}</div>
+              {% endif %}
+            </td>
+
+            <!-- Kích thước -->
+            <td>
+              {% if t.duong_kinh %}
+                <div>Ø{{ t.duong_kinh }} mm</div>
+              {% endif %}
+              {% if t.chieu_dai_lam_viec %}
+                <div>L = {{ t.chieu_dai_lam_viec }} mm</div>
+              {% endif %}
+              {% if not t.duong_kinh and not t.chieu_dai_lam_viec %}
+                <span class="text-muted">Không rõ</span>
+              {% endif %}
+            </td>
+
+            <!-- Vị trí -->
+            <td>
+              <div><strong>Tủ:</strong> {{ t.tu|default:"-" }}</div>
+              <div><strong>Ngăn:</strong> {{ t.ngan|default:"-" }}</div>
+            </td>
+
+            <!-- Nhà sản xuất -->
+            <td>
+              {{ t.nha_san_xuat|default:"-" }}
+              {% if t.ma_nha_sx %}
+                <div class="text-muted">Mã NSX: {{ t.ma_nha_sx }}</div>
+              {% endif %}
+            </td>
+
+            <!-- Tồn kho -->
+            <td>
+              {% if t.ton_kho is not None %}
+                <strong>{{ t.ton_kho }}</strong> {{ t.don_vi_tinh|default:"" }}
+                {% if t.muc_canh_bao %}
+                  <div class="text-muted">
+                    Cảnh báo: {{ t.muc_canh_bao }} {{ t.don_vi_tinh|default:"" }}
+                  </div>
+                {% endif %}
+              {% else %}
+                <span class="text-muted">Chưa nhập</span>
+              {% endif %}
+            </td>
+
+            <!-- Trạng thái tồn kho -->
+            <td>
+              {% if t.ton_kho == 0 %}
+                <span class="status-badge status-empty">Hết hàng</span>
+              {% elif t.muc_canh_bao and t.ton_kho and t.ton_kho <= t.muc_canh_bao %}
+                <span class="status-badge status-warn">Sắp hết - nên đặt</span>
+              {% else %}
+                <span class="status-badge status-safe">An toàn</span>
+              {% endif %}
+            </td>
+
+            <!-- Ngày nhập -->
+            <td>
+              {% if t.ngay_nhap_kho %}
+                {{ t.ngay_nhap_kho|date:"d/m/Y" }}
+              {% else %}
+                <span class="text-muted">-</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align:center;color:#9ca3af;padding:16px;">
+              Chưa có Tool tiêu hao nào trong hệ thống.
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".table-row-clickable").forEach(row => {
+      row.addEventListener("click", () => {
+        const url = row.getAttribute("data-href");
+        if (url) window.location.href = url;
+      });
+    });
+  });
+</script>

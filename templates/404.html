@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>404 - Không tìm thấy trang</title>
+<style>
+    :root {
+        --blue-tech: #38bdf8;
+        --dark: #0f172a;
+    }
+    body {
+        margin: 0;
+        font-family: "Segoe UI", sans-serif;
+        background: #ffffff;
+        color: var(--dark);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        padding: 20px;
+        text-align: center;
+    }
+    .box {
+        max-width: 500px;
+        padding: 48px 36px;
+        border: 1px solid #e5e7eb;
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+        animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .logo {
+        width: 58px;
+        height: 58px;
+        border-radius: 14px;
+        background: var(--blue-tech);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dark);
+        font-size: 30px;
+        font-weight: 800;
+        margin: 0 auto 18px;
+        box-shadow: 0 4px 12px rgba(56, 189, 248, 0.45);
+    }
+    h1 {
+        font-size: 36px;
+        margin: 10px 0 8px;
+    }
+    p {
+        color: #475569;
+        font-size: 15px;
+        margin-bottom: 28px;
+    }
+    a.btn {
+        padding: 10px 26px;
+        border-radius: 999px;
+        border: 1px solid var(--blue-tech);
+        text-decoration: none;
+        font-weight: 600;
+        color: var(--dark);
+        transition: 0.2s;
+    }
+    a.btn:hover {
+        background: var(--blue-tech);
+        color: #ffffff;
+    }
+</style>
+</head>
+<body>
+<div class="box">
+    <div class="logo">T</div>
+    <h1>404 - Không tìm thấy trang</h1>
+    <p>Trang bạn đang tìm không tồn tại hoặc có thể đã bị xóa. Hãy kiểm tra lại liên kết.</p>
+    <a class="btn" href="/login/">Về trang đăng nhập</a>
+</div>
+</body>
+</html>
