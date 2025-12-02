@@ -12,7 +12,7 @@ class Holder(models.Model):
     nha_san_xuat = models.CharField(max_length=100, blank=True, null=True)
     nha_cung_cap = models.CharField(max_length=150, blank=True, null=True)
     nguoi_quan_ly = models.CharField(max_length=100, blank=True, null=True)
-
+    
     TRANG_THAI_CHOICES = [
         ("dang_su_dung", "Đang sẵn sàng"),
         ("dang_bao_tri", "Đang bảo trì"),

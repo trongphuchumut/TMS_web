@@ -1,49 +1,79 @@
 from django.db import models
 from django.contrib.auth.models import User
 from tool.models import Tool
-from holder.models import Holder
 
 
 class ToolTransaction(models.Model):
-    EXPORT = "EXPORT"                    # Xuất kho
-    IMPORT = "IMPORT"                    # Nhập kho
-    RETURN = "RETURN"                    # Trả lại kho
-
+    # Các loại giao dịch
+    EXPORT = "EXPORT"    # Xuất kho (mượn / lấy tool ra)
+    IMPORT = "IMPORT"    # Nhập kho (mua mới / bổ sung)
+    RETURN = "RETURN"    # Trả lại kho (bỏ tool vào lại)
 
     LOAI_CHOICES = [
         (EXPORT, "Xuất kho"),
         (IMPORT, "Nhập kho"),
         (RETURN, "Trả lại kho"),
-
     ]
 
-    # Loại giao dịch (user chọn trong form)
+    # Trạng thái xử lý giao dịch
+    TRANG_THAI_CHOICES = [
+        ("PENDING", "Đang chờ tủ xử lý"),
+        ("SUCCESS", "Thành công"),
+        ("FAILED", "Thất bại"),
+    ]
+
+    # -----------------------------
+    # FIELD CHÍNH
+    # -----------------------------
     loai = models.CharField(max_length=20, choices=LOAI_CHOICES)
 
-    # Tool bị tác động
-    tool = models.ForeignKey(Tool, on_delete=models.CASCADE)
+    tool = models.ForeignKey(
+        Tool,
+        on_delete=models.CASCADE,
+        related_name="transactions",
+    )
 
-    # Số lượng thay đổi
     so_luong = models.PositiveIntegerField()
     ton_truoc = models.PositiveIntegerField()
     ton_sau = models.PositiveIntegerField()
 
-
-
-    # OPTIONAL – chỉ dùng cho dự án
+    # Các thông tin phụ
     ma_du_an = models.CharField(max_length=100, blank=True)
-
-    # ghi chú
     ghi_chu = models.TextField(blank=True)
 
-    # Người thực hiện (tự lấy từ request.user)
+    # Ai thực hiện
     nguoi_thuc_hien = models.ForeignKey(
-        User, null=True, on_delete=models.SET_NULL
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="tool_transactions",
     )
 
-    # thời gian tạo
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.loai} - {self.tool} - {self.so_luong}"
+    # -----------------------------
+    # MQTT – kết nối giao dịch phần cứng
+    # -----------------------------
+    trang_thai = models.CharField(
+        max_length=20,
+        choices=TRANG_THAI_CHOICES,
+        default="PENDING",
+    )
 
+    ly_do_fail = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text="Lý do giao dịch thất bại do tủ gửi về.",
+    )
+
+    tx_id = models.BigIntegerField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="ID giao dịch để map giữa Django và ESP32.",
+    )
+
+    # -----------------------------
+    def __str__(self):
+        return f"{self.loai} - {self.tool.ma_tool} - SL: {self.so_luong}"

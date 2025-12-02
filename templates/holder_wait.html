@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Đang xử lý giao dịch holder{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;margin:40px auto;text-align:center;">
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:8px;">
+    Đang xử lý giao dịch holder...
+  </h2>
+  <p style="color:#6b7280;margin-bottom:16px;">
+    Vui lòng thao tác với tủ theo hướng dẫn. Hệ thống sẽ tự cập nhật kết quả.
+  </p>
+
+  <div id="status-box" style="
+      padding:16px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      font-size:14px;
+  ">
+    <p id="status-text">Đang chờ phản hồi từ tủ (tx_id: {{ tx_id }})...</p>
+  </div>
+</div>
+
+<script>
+  const checkUrl = "{% url 'holder_muontra:check_holder_tx' tx_id=tx_id %}";
+  const redirectUrl = "{% url 'holder_muontra:history_holder' %}";
+
+  function checkStatus() {
+    fetch(checkUrl)
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.status) return;
+
+        const box = document.getElementById("status-box");
+        const text = document.getElementById("status-text");
+
+        if (data.status === "PENDING") {
+          text.textContent = "Đang chờ tủ xử lý...";
+        }
+
+        if (data.status === "SUCCESS") {
+          alert("✔ Giao dịch thành công!");
+          window.location.href = redirectUrl;
+        }
+
+        if (data.status === "FAILED") {
+          alert("❌ Giao dịch thất bại: " + (data.reason || "Không rõ lý do"));
+          window.location.href = redirectUrl;
+        }
+      })
+      .catch(err => {
+        console.error("Error checking holder tx:", err);
+      });
+  }
+
+  // Gọi mỗi 2 giây
+  setInterval(checkStatus, 2000);
+  let firstTick = Date.now();
+
+function checkStatus() {
+  fetch(checkUrl)
+    .then(res => res.json())
+    .then(data => {
+      if (!data || !data.status) return;
+
+      const elapsed = (Date.now() - firstTick) / 1000;
+
+      if (data.status === "PENDING") {
+        if (elapsed > 60) {
+          // Trường hợp hiếm: BE chưa đổi trạng thái kịp
+          alert("⏱ Hệ thống chờ quá lâu. Vui lòng kiểm tra tủ hoặc liên hệ kỹ thuật.");
+          window.location.href = redirectUrl;
+        }
+        return;
+      }
+
+      if (data.status === "SUCCESS") {
+        alert("✔ Giao dịch thành công!");
+        window.location.href = redirectUrl;
+      }
+
+      if (data.status === "FAILED") {
+        alert("❌ Giao dịch thất bại: " + (data.reason || "timeout"));
+        window.location.href = redirectUrl;
+      }
+    });
+}
+
+</script>
+{% endblock %}

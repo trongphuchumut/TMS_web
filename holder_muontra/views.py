@@ -4,6 +4,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Q
+from iot_gateway.mqtt import send_holder_borrow, send_holder_return
+import random
 
 from holder.models import Holder
 from .models import HolderHistory
@@ -50,15 +52,9 @@ def history_holder(request):
 
 
 def borrow_for_holder(request, holder_id):
-    """
-    Form mượn holder:
-    - Chỉ cho mượn khi holder đang ở trạng thái 'dang_su_dung'
-    - Tạo 1 dòng HolderHistory trạng thái 'DANG_MUON'
-    - Cập nhật trạng thái holder -> 'dang_duoc_muon'
-    """
     holder = get_object_or_404(Holder, pk=holder_id)
 
-    # 1. Chặn nếu holder không ở trạng thái sẵn sàng
+    # Không cho mượn nếu holder không sẵn sàng
     if holder.trang_thai_tai_san != "dang_su_dung":
         messages.error(
             request,
@@ -66,43 +62,55 @@ def borrow_for_holder(request, holder_id):
         )
         return redirect("holder_muontra:history_holder")
 
-    # 2. Chặn nếu đã có phiếu mượn đang mở
+    # Nếu đang có phiếu mượn đang mở -> chặn
     if HolderHistory.objects.filter(holder=holder, trang_thai="DANG_MUON").exists():
-        messages.error(
-            request,
-            "Holder này đã có phiếu mượn đang mở, không thể mượn tiếp."
-        )
+        messages.error(request, "Holder này đã có phiếu mượn đang mở.")
         return redirect("holder_muontra:history_holder")
 
     if request.method == "POST":
         muc_dich = request.POST.get("muc_dich")
         du_an = request.POST.get("du_an", "").strip()
         mo_ta = request.POST.get("mo_ta", "").strip()
+        user_rfid = request.POST.get("user_rfid", "U000").strip()
 
         if not muc_dich:
             messages.error(request, "Bạn chưa chọn mục đích mượn.")
             return redirect(request.path)
 
+        # ======== 1) GENERATE tx_id ========
+        tx_id = random.randint(1, 999_999_999)
+
+        # ======== 2) TẠO LỊCH SỬ DẠNG PENDING ========
         history = HolderHistory.objects.create(
             holder=holder,
             muc_dich=muc_dich,
             du_an=du_an,
             mo_ta=mo_ta,
-            trang_thai="DANG_MUON",  # khớp TRANG_THAI_CHOICES
-            # thoi_gian_muon dùng auto_now_add
+            trang_thai="PENDING",       # CHỜ TỦ PHẢN HỒI
+            tx_id=tx_id,                # GẮN TX_ID
             nguoi_thuc_hien=request.user if request.user.is_authenticated else None,
-            # mon_truoc sẽ được set trong save() nếu chưa có
         )
 
-        # Cập nhật trạng thái holder -> đang được mượn
-        holder.trang_thai_tai_san = "dang_duoc_muon"
-        # Nếu holder.mon đang None, coi như 100
-        if holder.mon is None:
-            holder.mon = 100
-        holder.save()
+        # ======== 3) Gửi lệnh MQTT ========
+        locker = holder.tu or "A"
+        cell = holder.ngan or 1
+        holder_rfid = holder.ma_noi_bo
 
-        messages.success(request, "Đã lưu phiếu mượn holder.")
-        return redirect("holder_muontra:history_holder")
+
+        send_holder_borrow(
+            locker=locker,
+            cell=cell,
+            user_rfid=user_rfid,
+            holder_rfid_expected=holder_rfid,
+            tx_id=tx_id,
+        )
+
+        # ======== 4) BÁO NGƯỜI DÙNG ========
+        messages.success(
+            request,
+            "Đã gửi yêu cầu mượn holder. Đang chờ tủ phản hồi (PENDING)."
+        )
+        return redirect("holder_muontra:wait_holder", tx_id=tx_id)
 
     context = {
         "holder": holder,
@@ -112,15 +120,8 @@ def borrow_for_holder(request, holder_id):
 
 
 def return_for_holder(request, holder_id):
-    """
-    Form trả holder:
-    - Chỉ xử lý nếu có 1 history đang 'DANG_MUON'
-    - Tính thời lượng, giảm độ bền (mặc định mỗi lần ít nhất 10),
-      nếu bảo trì xong thì reset về 100.
-    """
     holder = get_object_or_404(Holder, pk=holder_id)
 
-    # Phiếu mượn gần nhất (đang mượn)
     last_history = (
         HolderHistory.objects
         .filter(holder=holder, trang_thai="DANG_MUON")
@@ -128,65 +129,56 @@ def return_for_holder(request, holder_id):
         .first()
     )
 
-    # Không có phiếu mượn đang mở -> chặn luôn
     if not last_history:
-        messages.error(
-            request,
-            "Holder này hiện không có phiếu mượn đang mở, không thể trả."
-        )
+        messages.error(request, "Không có phiếu mượn đang mở.")
         return redirect("holder_muontra:history_holder")
 
     if request.method == "POST":
-        ly_do = request.POST.get("ly_do_tra")
+        ly_do = request.POST.get("ly_do_tra", "")
         mo_ta_tra = request.POST.get("mo_ta_tra", "").strip()
+        user_rfid = request.POST.get("user_rfid", "U000").strip()
 
-        thoi_gian_tra = timezone.now()
-        thoi_gian_muon = last_history.thoi_gian_muon
+        # ======== 1) tx_id ========
+        tx_id = random.randint(1, 999_999_999)
 
-        # Thời lượng (phút)
-        delta = thoi_gian_tra - thoi_gian_muon
-        thoi_luong_phut = int(delta.total_seconds() // 60)
+        # ======== 2) Tạo LỊCH SỬ trả PENDING ========
+        # thay vì sửa last_history, ta tạo 1 dòng mới
+        history_return = HolderHistory.objects.create(
+            holder=holder,
+            muc_dich=last_history.muc_dich,
+            du_an=last_history.du_an,
+            mo_ta=mo_ta_tra,
+            trang_thai="PENDING",
+            tx_id=tx_id,
+            nguoi_thuc_hien=(
+                request.user if request.user.is_authenticated else None
+            ),
+            ly_do_tra=ly_do if hasattr(HolderHistory, "ly_do_tra") else "",
+        )
 
-        # ====== TÍNH GIẢM ĐỘ BỀN ======
-        phut_moi_1_percent = 120  # ví dụ: 120 phút = giảm 1%
-        giam_theo_thoi_gian = thoi_luong_phut / phut_moi_1_percent if phut_moi_1_percent > 0 else 0
+        # ======== 3) Gửi MQTT ========
+        locker = holder.tu or "A"
+        cell = holder.ngan or 1
+        holder_rfid = holder.ma_noi_bo
 
-        # Mỗi lần mượn/trả tối thiểu mất 10 độ bền
-        giam_do_ben = max(10, giam_theo_thoi_gian)
 
-        # Độ bền trước khi trả
-        mon_truoc = holder.mon if holder.mon is not None else 100
+        send_holder_return(
+            locker=locker,
+            cell=cell,
+            user_rfid=user_rfid,
+            holder_rfid_expected=holder_rfid,
+            tx_id=tx_id,
+        )
 
-        if ly_do == "bao_tri_xong":
-            # Bảo trì xong thì hồi về 100%
-            holder.mon = 100
-        else:
-            # Giảm độ bền, không cho nhỏ hơn 0
-            holder.mon = max(0, mon_truoc - giam_do_ben)
+        messages.success(request, "Đã yêu cầu trả holder. Đang chờ tủ xử lý (PENDING).")
+        return redirect("holder_muontra:wait_holder", tx_id=tx_id)
 
-        holder.trang_thai_tai_san = "dang_su_dung"
-        holder.save()
-
-        # Cập nhật phiếu mượn
-        last_history.thoi_gian_tra = thoi_gian_tra
-        last_history.thoi_luong_phut = thoi_luong_phut
-        last_history.mon_truoc = mon_truoc
-        last_history.mon_sau = holder.mon
-        last_history.trang_thai = "DA_TRA"
-
-        # Nếu model có các field này, thì set
-        if hasattr(last_history, "ly_do_tra"):
-            last_history.ly_do_tra = ly_do
-        if hasattr(last_history, "mo_ta_tra"):
-            last_history.mo_ta_tra = mo_ta_tra
-
-        last_history.save()
-
-        messages.success(request, "Đã cập nhật phiếu trả.")
-        return redirect("holder_muontra:history_holder")
-
-    # GET -> hiện form trả
     return render(request, "holder_return.html", {
         "holder": holder,
         "last_history": last_history,
     })
+def wait_holder(request, tx_id):
+    """
+    Trang chờ tủ xử lý giao dịch holder. JS sẽ gọi API để kiểm tra trạng thái.
+    """
+    return render(request, "holder_wait.html", {"tx_id": tx_id})

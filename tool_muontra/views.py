@@ -37,25 +37,38 @@ def history_tool(request):
     return render(request, "tool_history.html", context)
 
 
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
+from django.db.models import Q
+
+from tool.models import Tool
+from .models import ToolTransaction
+
+from iot_gateway.mqtt import send_tool_borrow, send_tool_return
+import random
+
+
 def tool_transaction_create(request, tool_id):
     """
-    Tạo 1 giao dịch tool – đúng với model hiện tại (EXPORT, IMPORT, RETURN).
+    Tạo giao dịch TOOL theo hệ thống mới:
+    - Không cập nhật tồn kho ngay.
+    - Tạo PENDING record.
+    - Gửi MQTT → chờ SUCCESS/FAILED.
     """
     tool = get_object_or_404(Tool, pk=tool_id)
 
     if request.method == "POST":
-        print("DEBUG POST tool_transaction_create")  # để bạn thấy trên console
 
-        # Lấy dữ liệu form
         loai = request.POST.get("loai")
         so_luong_raw = request.POST.get("so_luong")
         ma_du_an = request.POST.get("ma_du_an", "").strip()
         ghi_chu = request.POST.get("ghi_chu", "").strip()
+        user_rfid = request.POST.get("user_rfid", "U000").strip()
 
         # Validate số lượng
         try:
             so_luong = int(so_luong_raw)
-        except (TypeError, ValueError):
+        except Exception:
             messages.error(request, "Số lượng không hợp lệ.")
             return redirect(request.path)
 
@@ -63,41 +76,66 @@ def tool_transaction_create(request, tool_id):
             messages.error(request, "Số lượng phải > 0.")
             return redirect(request.path)
 
-        # ✅ DÙNG ĐÚNG FIELD TỒN KHO
+        # TON TRƯỚC = tồn kho hiện tại
         ton_truoc = tool.ton_kho
 
-        # Các loại cộng tồn kho (IMPORT, RETURN)
-        loai_cong = {
-            ToolTransaction.IMPORT,
-            ToolTransaction.RETURN,
-        }
+        # TON SAU = chưa biết (chỉ cập nhật sau khi SUCCESS)
+        ton_sau = ton_truoc
 
-        if loai in loai_cong:
-            ton_sau = ton_truoc + so_luong
-        else:
-            # EXPORT → trừ tồn
-            ton_sau = ton_truoc - so_luong
-            if ton_sau < 0:
-                messages.error(request, "Không đủ tồn kho để xuất.")
-                return redirect(request.path)
+        # 1) Generate TX ID cho MQTT
+        tx_id = random.randint(1, 999_999_999)
 
-        # Lưu transaction
-        ToolTransaction.objects.create(
+        # 2) Tạo transaction dạng PENDING
+        tran = ToolTransaction.objects.create(
             loai=loai,
             tool=tool,
             so_luong=so_luong,
             ton_truoc=ton_truoc,
-            ton_sau=ton_sau,
+            ton_sau=ton_sau,   # cập nhật sau
             ma_du_an=ma_du_an,
             ghi_chu=ghi_chu,
             nguoi_thuc_hien=request.user if request.user.is_authenticated else None,
+            trang_thai="PENDING",
+            tx_id=tx_id,
         )
 
-        # Cập nhật tồn kho thực
-        tool.ton_kho = ton_sau
-        tool.save(update_fields=["ton_kho"])
+        # 3) Gửi MQTT
+        # - EXPORT  → tool_borrow_start
+        # - IMPORT, RETURN → tool_return_start
 
-        messages.success(request, "Lưu giao dịch thành công.")
+        locker = getattr(tool, "tu", "B")
+        cell = getattr(tool, "ngan", 1)
+
+        if loai == ToolTransaction.EXPORT:
+            send_tool_borrow(
+                locker=locker,
+                cell=cell,
+                user_rfid=user_rfid,
+                tool_code=tool.ma_tool,
+                qty=so_luong,
+                tx_id=tx_id,
+            )
+
+        elif loai in (ToolTransaction.IMPORT, ToolTransaction.RETURN):
+            send_tool_return(
+                locker=locker,
+                cell=cell,
+                user_rfid=user_rfid,
+                tool_code=tool.ma_tool,
+                qty=so_luong,
+                tx_id=tx_id,
+            )
+
+        else:
+            messages.error(request, "Loại giao dịch không hợp lệ.")
+            return redirect(request.path)
+
+        # 4) Thông báo cho người dùng
+        messages.success(
+            request,
+            "Giao dịch đã gửi đến tủ. Hệ thống đang chờ phản hồi (PENDING)."
+        )
+
         return redirect("tool_muontra:history_tool")
 
     # GET → hiện form

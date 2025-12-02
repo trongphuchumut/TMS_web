@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'tool',
     'holder_muontra',
     'tool_muontra',
+    'iot_gateway',
 ]
 
 MIDDLEWARE = [

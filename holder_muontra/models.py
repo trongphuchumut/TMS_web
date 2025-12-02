@@ -20,9 +20,12 @@ class HolderHistory(models.Model):
     ]
 
     TRANG_THAI_CHOICES = [
-        ("DANG_MUON", "Đang mượn"),
-        ("DA_TRA", "Đã trả"),
-    ]
+    ("PENDING", "Đang chờ tủ xử lý"),
+    ("SUCCESS", "Thành công"),
+    ("FAILED", "Thất bại"),
+    ("DANG_MUON", "Đang mượn"),
+    ("DA_TRA", "Đã trả"),
+]
 
     # === THAM CHIẾU HOLDER GỐC ===
     holder = models.ForeignKey(
@@ -105,12 +108,12 @@ class HolderHistory(models.Model):
     )
 
     trang_thai = models.CharField(
-        max_length=20,
-        choices=TRANG_THAI_CHOICES,
-        default="DANG_MUON",
-        verbose_name="Trạng thái mượn",
-    )
-
+    max_length=20,
+    choices=TRANG_THAI_CHOICES,
+    default="PENDING"
+)
+    ly_do_fail = models.CharField(max_length=255, blank=True, default="")
+    tx_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Tạo lúc",
