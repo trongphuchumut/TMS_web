@@ -9,5 +9,5 @@ urlpatterns = [
     path("tool/", include("tool.urls")),
     path("tool-muontra/", include("tool_muontra.urls")),
     path("holder-muontra/", include("holder_muontra.urls")),
-    path('chatbot/', chatbot_view, name='chatbot_api'),
+     path("chatbot/", include("chatbot.urls")),
 ]

@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% block title %}Fuzzy - Kết quả gần nhất{% endblock %}
+
+{% block extra_css %}
+<style>
+  .fz-wrap{max-width:1120px;margin:0 auto;padding:16px 0 32px;}
+  .fz-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:14px}
+  .fz-title{font-size:22px;font-weight:800;color:var(--blue-strong);letter-spacing:.04em;text-transform:uppercase}
+  .fz-sub{font-size:13px;color:#6b7280}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 12px 28px rgba(2,6,23,.06);padding:14px 14px}
+  .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}}
+  .kpi{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .pill{border:1px solid #dbeafe;background:#eff6ff;border-radius:999px;padding:6px 10px;font-size:12px;color:#0f172a}
+  .toplist{margin:0;padding-left:18px}
+  .toplist li{margin:6px 0}
+  .muted{color:#6b7280;font-size:13px}
+  .canvas-box{display:flex;justify-content:center;align-items:center;padding:10px;border:1px dashed #e5e7eb;border-radius:14px;background:linear-gradient(180deg,#ffffff,#f8fafc)}
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:10px 12px;border:1px solid #dbeafe;background:#fff;color:#0f172a;text-decoration:none;font-weight:700}
+  .btn:hover{background:#eff6ff}
+  code{background:#f1f5f9;border:1px solid #e2e8f0;padding:2px 6px;border-radius:8px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  select{border:1px solid #e5e7eb;border-radius:12px;padding:9px 10px;background:#fff;font-weight:700}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .lg{display:flex;align-items:center;gap:8px;font-size:12px;color:#0f172a}
+  .dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+  .warn{border:1px solid #fecaca;background:#fff1f2;color:#7f1d1d;border-radius:14px;padding:10px 12px;font-weight:800}
+  .hint{border:1px solid #dbeafe;background:#eff6ff;color:#0f172a;border-radius:14px;padding:10px 12px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="fz-wrap">
+  <div class="fz-head">
+    <div>
+      <div class="fz-title">FUZZY RESULT</div>
+      <div class="fz-sub">
+        Trang này hiển thị câu hỏi fuzzy gần nhất và biểu đồ membership theo từng tiêu chí.
+        Chấm đỏ là <b>query</b>; chấm đen là <b>top đáp án</b> (μ tính theo tam giác).
+      </div>
+    </div>
+    <div class="btnrow">
+      <a class="btn" href="/chatbot/">⬅️ Quay lại Chatbot</a>
+      <a class="btn" href="/chatbot/api/fuzzy/last/" target="_blank">🧾 JSON last</a>
+    </div>
+  </div>
+
+  {% if not last %}
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:6px;">Chưa có dữ liệu FUZZY</div>
+      <div class="muted">Bạn hãy hỏi chatbot 1 câu có FUZZY rồi quay lại trang này.</div>
+    </div>
+  {% else %}
+  <div class="grid">
+    <div class="card">
+      <div style="font-weight:800;margin-bottom:6px;">Câu hỏi gần nhất</div>
+      <div style="white-space:pre-wrap">{{ last.question }}</div>
+
+      <div class="kpi">
+        <div class="pill">confidence: {{ last.meta.confidence|default:"-" }}</div>
+        <div class="pill">filled: {{ last.meta.filled_fields|default:""|length }}</div>
+        <div class="pill">mode: {{ last.meta.topk_mode|default:"-" }}</div>
+        {% if last.meta.gap_top12 != None %}
+          <div class="pill">gap(top1-top2): {{ last.meta.gap_top12 }}</div>
+        {% endif %}
+      </div>
+
+      <hr style="border:none;border-top:1px solid #eef2f7;margin:12px 0">
+
+      <div style="font-weight:800;margin-bottom:8px;">Top đề xuất</div>
+      <ol class="toplist">
+        {% for r in last.top %}
+          <li>
+            <b>{{ r.name }}</b>{% if r.code %} <span class="muted">({{ r.code }})</span>{% endif %}
+            <div class="muted">Điểm: <b>{{ r.score }}</b>/100</div>
+          </li>
+        {% endfor %}
+      </ol>
+
+      <div class="hint" style="margin-top:10px;">
+        <b>Cách đọc nhanh:</b> Nếu chấm <b>Query</b> và chấm <b>Top1</b> cùng rơi vào vùng <b>High</b> của tiêu chí quan trọng
+        (ví dụ đường kính/vật liệu), thì đề xuất “hợp lý”.
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px;">
+        <div style="font-weight:800;">Membership theo tiêu chí</div>
+        <div class="row">
+          <span class="muted">Tiêu chí:</span>
+          <select id="critSel"></select>
+        </div>
+      </div>
+
+      <div id="plotWarn" class="warn" style="display:none;margin-bottom:10px;"></div>
+
+      <div class="muted" id="critLabel" style="margin-bottom:10px;"></div>
+
+      <div class="canvas-box">
+        <canvas id="triChart" width="520" height="320"></canvas>
+      </div>
+
+      <div class="legend">
+        <span class="lg"><span class="dot" style="background:#0ea5e9"></span> Low</span>
+        <span class="lg"><span class="dot" style="background:#6366f1"></span> Medium</span>
+        <span class="lg"><span class="dot" style="background:#22c55e"></span> High</span>
+        <span class="lg"><span class="dot" style="background:#ef4444"></span> Query</span>
+        <span class="lg"><span class="dot" style="background:#111827"></span> Top</span>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
+        Lưu ý: chấm được đặt theo <b>(x = value)</b> và <b>(y = μ(value))</b> nên “đúng fuzzy”, không phải chấm cho đẹp.
+      </div>
+    </div>
+  </div>
+
+  {# ===== payload: hỗ trợ cả dict lẫn string ===== #}
+  {% if last_json %}
+    {% if last_json|slice:":1" == "{" %}
+      <script id="lastFuzzy" type="application/json">{{ last_json|safe }}</script>
+    {% else %}
+      {{ last_json|json_script:"lastFuzzy" }}
+    {% endif %}
+  {% else %}
+    <script id="lastFuzzy" type="application/json">{}</script>
+  {% endif %}
+
+  {% endif %}
+
+<script>
+(function(){
+  const dataEl = document.getElementById("lastFuzzy");
+  const warnEl = document.getElementById("plotWarn");
+  const sel = document.getElementById("critSel");
+  const label = document.getElementById("critLabel");
+  const canvas = document.getElementById("triChart");
+  if (!dataEl || !warnEl || !sel || !label || !canvas) return;
+
+  function setWarn(msg){
+    warnEl.style.display = "block";
+    warnEl.innerHTML = msg;
+  }
+
+  let last = {};
+  try{
+    last = JSON.parse(dataEl.textContent || "{}");
+  }catch(e){
+    setWarn("Payload JSON bị lỗi parse. Kiểm tra <code>last_json</code> truyền từ view.");
+    label.textContent = "Không có dữ liệu plot để vẽ.";
+    return;
+  }
+
+  const plot = last && last.meta && last.meta.plot && last.meta.plot.criteria;
+
+  if (!plot || typeof plot !== "object" || Object.keys(plot).length === 0) {
+    setWarn("Chưa có <code>last.meta.plot.criteria</code>. Pipeline cần trả về dữ liệu plot trước.");
+    label.textContent = "Không có dữ liệu plot để vẽ.";
+    return;
+  }
+
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  const pad = 44;
+
+  const colors = { low:"#0ea5e9", medium:"#6366f1", high:"#22c55e" };
+  const topColor = "#111827";
+  const queryColor = "#ef4444";
+  const axisColor = "#94a3b8";
+  const textColor = "#0f172a";
+
+  function xMap(v){ return pad + (W - 2*pad) * v; }
+  function yMap(mu){ return (H - pad) - (H - 2*pad) * mu; }
+
+  function triMu(x01, a, b, c){
+    const x = x01 * 100;
+    if (x <= a || x >= c) return 0;
+    if (x === b) return 1;
+    if (x < b) return (x - a) / (b - a);
+    return (c - x) / (c - b);
+  }
+
+  function clear(){ ctx.clearRect(0,0,W,H); }
+
+  function drawAxes(){
+    ctx.strokeStyle = axisColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad, H-pad); ctx.lineTo(W-pad, H-pad);
+    ctx.moveTo(pad, H-pad); ctx.lineTo(pad, pad);
+    ctx.stroke();
+
+    ctx.fillStyle = textColor;
+    ctx.font = "12px system-ui";
+    [0,0.25,0.5,0.75,1].forEach(t=>{
+      const x = xMap(t);
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.beginPath(); ctx.moveTo(x, H-pad); ctx.lineTo(x, H-pad+5); ctx.stroke();
+      ctx.fillText(String(Math.round(t*100)), x-8, H-pad+18);
+    });
+
+    [0,0.5,1].forEach(m=>{
+      const y = yMap(m);
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.beginPath(); ctx.moveTo(pad-5, y); ctx.lineTo(pad, y); ctx.stroke();
+      ctx.fillStyle = textColor;
+      ctx.fillText(m.toFixed(1), 10, y+4);
+    });
+
+    ctx.fillText("Value (0..100)", W/2 - 44, H - 12);
+    ctx.save();
+    ctx.translate(14, H/2 + 24);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText("μ (membership)", 0, 0);
+    ctx.restore();
+  }
+
+  function drawTriangleSet(name, setDef){
+    const {a,b,c} = setDef || {};
+    if (a==null || b==null || c==null) return;
+
+    ctx.strokeStyle = colors[name] || "#64748b";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(xMap(a/100), yMap(0));
+    ctx.lineTo(xMap(b/100), yMap(1));
+    ctx.lineTo(xMap(c/100), yMap(0));
+    ctx.stroke();
+
+    ctx.fillStyle = ctx.strokeStyle;
+    const mid = (a+c)/2;
+    ctx.fillText(name.toUpperCase(), xMap(mid/100)-14, yMap(0)+16);
+  }
+
+  function drawDot(x01, mu, color, text){
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(xMap(x01), yMap(mu), 5.5, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle = textColor;
+    ctx.font = "12px system-ui";
+    ctx.fillText(text, xMap(x01)+8, yMap(mu)-8);
+  }
+
+  function computeMuForAllSets(x01, sets){
+    const mus = {};
+    Object.entries(sets || {}).forEach(([k,s])=>{
+      mus[k] = triMu(x01, s.a, s.b, s.c);
+    });
+    return mus;
+  }
+
+  function bestSet(mus){
+    let bestK = null, bestV = -1;
+    Object.entries(mus || {}).forEach(([k,v])=>{
+      if (v > bestV){ bestV=v; bestK=k; }
+    });
+    return {set:bestK, mu:bestV};
+  }
+
+  function draw(criteriaKey){
+    clear();
+    drawAxes();
+
+    const P = plot[criteriaKey];
+    if (!P || !P.sets) return;
+
+    label.textContent = `Tiêu chí: ${criteriaKey}`;
+
+    ["low","medium","high"].forEach(k=>{
+      if (P.sets[k]) drawTriangleSet(k, P.sets[k]);
+    });
+
+    const qx = Number(P.query ?? 0);
+    const qMus = computeMuForAllSets(qx, P.sets);
+    const qBest = bestSet(qMus);
+    drawDot(qx, qBest.mu, queryColor, `Query μ=${qBest.mu.toFixed(2)} (${qBest.set})`);
+
+    const tops = Array.isArray(P.tops) ? P.tops.slice(0,5) : [];
+    tops.forEach((t, idx)=>{
+      const vx = Number(t.value ?? 0);
+      const mus = computeMuForAllSets(vx, P.sets);
+      const b = bestSet(mus);
+      drawDot(vx, b.mu, topColor, `Top${idx+1} μ=${b.mu.toFixed(2)} (${b.set})`);
+    });
+  }
+
+  sel.innerHTML = "";
+  const keys = Object.keys(plot);
+  keys.forEach(k=>{
+    const opt = document.createElement("option");
+    opt.value = k; opt.textContent = k;
+    sel.appendChild(opt);
+  });
+
+  sel.addEventListener("change", ()=>draw(sel.value));
+  draw(keys[0]);
+})();
+</script>
+
+</div>
+{% endblock %}

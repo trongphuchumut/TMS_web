@@ -71,3 +71,19 @@ def get_chatbot_config() -> "ChatbotConfig":
     """
     cfg, _ = ChatbotConfig.objects.get_or_create(pk=1)
     return cfg
+
+
+class FuzzyRunLog(models.Model):
+    """
+    Lưu lại lần chạy FUZZY gần nhất để demo/bảo vệ đồ án:
+    - câu hỏi
+    - tiêu chí đã parse
+    - top kết quả + breakdown
+    """
+    created_at = models.DateTimeField(auto_now_add=True)
+    user_text = models.TextField()
+    criteria_json = models.JSONField()
+    results_json = models.JSONField()  # list topN: {score, name, code, breakdown}
+
+    def __str__(self) -> str:
+        return f"FuzzyRunLog #{self.pk} - {self.created_at:%Y-%m-%d %H:%M}"

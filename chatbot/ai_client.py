@@ -1,45 +1,58 @@
 # chatbot/ai_client.py
+from __future__ import annotations
+
+import os
 import requests
 
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "120"))
 
-def call_ai(prompt: str) -> str:
+# ✅ Frontend gửi: "local" | "cloud"
+# ✅ Map ra model thật trong Ollama
+MODEL_ALIAS = {
+    "cloud": os.getenv("TMS_MODEL_CLOUD", "gpt-oss:120b-cloud"),
+    "local": os.getenv("TMS_MODEL_LOCAL", "gemma3:4b"),
+}
+
+def resolve_model(model: str | None) -> str:
+    """
+    Nhận alias từ UI ("local"/"cloud") hoặc nhận trực tiếp tên model đầy đủ.
+    """
+    m = (model or "cloud").strip().lower()
+    return MODEL_ALIAS.get(m, model or MODEL_ALIAS["cloud"])
+
+def call_ai(prompt: str, model: str | None = None) -> str:
+    """
+    Gọi Ollama /api/generate.
+    model: "local" | "cloud" | hoặc tên model đầy đủ (vd: "gemma3:4b")
+    """
     payload = {
-        "model": "gpt-oss:120b-cloud",
+        "model": resolve_model(model),
         "prompt": prompt,
         "stream": False,
     }
 
-    print("[AI] Sending prompt, length:", len(prompt))    # 👈 debug
-    # print("[AI] Prompt preview:", prompt[:200])         # mở nếu cần soi prompt
+    print("[AI] model:", payload["model"])
+    print("[AI] prompt length:", len(prompt))
 
     try:
-        res = requests.post(
-            "http://localhost:11434/api/generate",
-            json=payload,
-            timeout=120,
-        )
+        res = requests.post(OLLAMA_URL, json=payload, timeout=OLLAMA_TIMEOUT)
     except Exception as e:
-        print("[AI] Connection error:", e)                # 👈 debug
+        print("[AI] Connection error:", e)
         return f"Lỗi kết nối tới Ollama: {e}"
 
-    print("[AI] HTTP status:", res.status_code)           # 👈 debug
+    print("[AI] HTTP status:", res.status_code)
 
     try:
         data = res.json()
     except ValueError:
-        print("[AI] JSON parse error, raw text:", res.text[:200])  # 👈 debug
+        print("[AI] JSON parse error:", res.text[:200])
         return f"Ollama trả về không phải JSON: {res.text[:200]}"
 
     if "error" in data:
-        print("[AI] Ollama error field:", data["error"])  # 👈 debug
+        print("[AI] Ollama error:", data["error"])
         return f"Lỗi từ Ollama: {data['error']}"
 
-    if "response" not in data:
-        print("[AI] Missing 'response' field, data:", data)  # 👈 debug
-        return f"Ollama không trả field 'response': {data}"
-
-    reply = data["response"]
-    print("[AI] Got reply length:", len(reply))           # 👈 debug
-    # print("[AI] Reply preview:", reply[:200])
-
-    return reply
+    reply = data.get("response", "")
+    print("[AI] reply length:", len(reply))
+    return (reply or "").strip()

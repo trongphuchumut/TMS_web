@@ -1,199 +1,156 @@
 # chatbot/fuzzy/pipeline.py
-from typing import Any
+from __future__ import annotations
+from .plot_builder import build_plot
+
+import json
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
 
 from .criteria_parser import call_ai_for_criteria
 from .candidates import get_candidates
 from .scoring import score_all_candidates
-from ..ai_client import call_ai
 from tool.models import Tool
 from holder.models import Holder
 
 
-# chatbot/fuzzy/pipeline.py
-
-from typing import Any
-from .criteria_parser import call_ai_for_criteria
-from .candidates import get_candidates
-from .scoring import score_all_candidates
-from ..ai_client import call_ai
-from tool.models import Tool
-from holder.models import Holder
+# Các field tối thiểu để fuzzy "đủ thông tin" cho đề xuất tự tin
+CRITICAL_FIELDS = ("vat_lieu", "loai_gia_cong")
 
 
-def build_main_answer(scored: list[tuple[float, Any]]) -> str:
-    top = [s for s in scored if s[0] > 0][:6]
-
-    if not top:
-        return (
-            "Hiện chưa tìm được thiết bị nào thực sự phù hợp sau khi lọc. "
-            "Bạn thử mô tả chi tiết hơn (vật liệu, kiểu gia công, kích thước, yêu cầu bề mặt...) nhé."
-        )
-
-    top_tools: list[tuple[float, Tool]] = []
-    top_holders: list[tuple[float, Holder]] = []
-
-    for score, dev in top:
-        if isinstance(dev, Tool):
-            top_tools.append((score, dev))
-        elif isinstance(dev, Holder):
-            top_holders.append((score, dev))
-
-    lines: list[str] = []
-    lines.append("Dựa trên tiêu chí fuzzy, mình đề xuất:")
-
-    if top_tools:
-        lines.append("")
-        lines.append("🔧 Tool phù hợp:")
-        for score, tool in top_tools[:3]:
-            lines.append(
-                f"- Tool {tool.ma_tool} – {tool.ten_tool} "
-                f"(nhóm {tool.nhom_tool or '?'}) – điểm fuzzy ~ {round(score * 100)}"
-            )
-
-    if top_holders:
-        lines.append("")
-        lines.append("🧱 Holder phù hợp:")
-        for score, holder in top_holders[:3]:
-            lines.append(
-                f"- Holder {holder.ma_noi_bo} – {holder.ten_thiet_bi} "
-                f"– điểm fuzzy ~ {round(score * 100)}"
-            )
-
-    return "\n".join(lines)
+def _filled_fields(criteria: dict) -> List[str]:
+    keys = []
+    for k in ("loai_gia_cong", "vat_lieu", "duong_kinh", "chieu_dai_lam_viec", "yeu_cau_be_mat", "do_chinh_xac"):
+        v = criteria.get(k) if isinstance(criteria, dict) else None
+        if v not in (None, "", []):
+            keys.append(k)
+    return keys
 
 
-
-def build_debug_block(
-    user_message: str,
-    criteria: dict | None,
-    raw_ai_criteria: str,
-    criteria_err,
-    loai_thiet_bi: str,
-    candidates: list,
-    scored: list[tuple[float, Any]],
-) -> str:
-    """Ghép block DEBUG chi tiết pipeline để bạn dễ theo dõi / mở rộng."""
-    lines: list[str] = []
-    lines.append("=== DEBUG fuzzy_suggest ===")
-    lines.append(f"user_message: {user_message!r}")
-    lines.append("")
-    lines.append("---- B1: AI phân tích tiêu chí ----")
-    lines.append(f"raw_criteria_from_ai: {raw_ai_criteria!r}")
-    if criteria_err:
-        lines.append(f"JSON parse error: {repr(criteria_err)}")
-    lines.append("")
-    lines.append("criteria (parsed):")
-    lines.append(str(criteria))
-
-    lines.append("")
-    lines.append("---- B2: Candidates từ DB ----")
-    lines.append(f"loai_thiet_bi: {loai_thiet_bi}")
-    lines.append(f"num_candidates: {len(candidates)}")
-
-    lines.append("")
-    lines.append("---- B3: Điểm fuzzy tuyến tính (tối đa 20 dòng) ----")
-    for score, dev in scored[:20]:
-        if isinstance(dev, Tool):
-            ident = f"Tool[{dev.id}] {dev.ma_tool} - {dev.ten_tool}"
-        elif isinstance(dev, Holder):
-            ident = f"Holder[{dev.id}] {dev.ma_noi_bo} - {dev.ten_thiet_bi}"
-        else:
-            ident = f"Obj[{getattr(dev, 'id', '?')}]"
-        lines.append(f"{ident} -> score={score:.3f}")
-
-    return "\n".join(lines)
-
-
-def run_fuzzy_suggest(user_message: str, debug: bool = False) -> str:
-    """
-    Pipeline tổng cho fuzzy:
-      - B1: AI phân tích câu nói -> JSON tiêu chí
-      - B2: Lọc ứng viên từ DB
-      - B3: Chấm điểm fuzzy
-      - B4: Build câu trả lời chính
-      - (optional) DEBUG: ghép thêm block debug chi tiết phía dưới
-    """
-
-    # B1: gọi AI phân tích tiêu chí
-    criteria, raw_ai_criteria, criteria_err = call_ai_for_criteria(user_message)
-
-    # Nếu parse JSON lỗi hoàn toàn => dùng fallback text mode
-    if criteria is None:
-        fallback_prompt = (
-            "Bạn là chuyên gia chọn tool/holder. "
-            "Hãy đọc mô tả sau và đề xuất vài tool/holder phù hợp, kèm giải thích ngắn.\n\n"
-            f"Mô tả: {user_message}"
-        )
-        fallback_answer = call_ai(fallback_prompt)
-
-        if debug:
-            debug_block = (
-                "=== DEBUG fuzzy_suggest ===\n"
-                "JSON parse error, dùng fallback text mode.\n"
-                f"raw_criteria_from_ai: {raw_ai_criteria!r}\n"
-                f"error: {repr(criteria_err)}\n"
-                f"fallback_prompt: {fallback_prompt!r}"
-            )
-            return fallback_answer + "\n\n" + debug_block
-
-        return fallback_answer
-
-    # B2: lấy candidates
-    candidates, loai_thiet_bi = get_candidates(criteria)
-
-    # B3: chấm điểm
-    scored = score_all_candidates(candidates, criteria)
-
-    # B4: câu trả lời chính
-    main_answer = build_main_answer(scored)
-
-    if debug:
-        debug_block = build_debug_block(
-            user_message=user_message,
-            criteria=criteria,
-            raw_ai_criteria=raw_ai_criteria,
-            criteria_err=criteria_err,
-            loai_thiet_bi=loai_thiet_bi,
-            candidates=candidates,
-            scored=scored,
-        )
-        return main_answer + "\n\n" + debug_block
-
-    return main_answer
-
-# chatbot/fuzzy/pipeline.py (thêm code này)
-
-CRITICAL_FIELDS = ["vat_lieu", "loai_gia_cong"]  # bạn có thể thêm tùy ý
-
-
-def detect_missing_fields(criteria: dict | None) -> list[str]:
-    if not criteria:
-        return CRITICAL_FIELDS[:]  # thiếu sạch
+def _missing_critical(criteria: dict) -> List[str]:
     missing = []
-    for f in CRITICAL_FIELDS:
-        v = criteria.get(f)
-        if not v or not str(v).strip():
-            missing.append(f)
+    for k in CRITICAL_FIELDS:
+        if not criteria.get(k):
+            missing.append(k)
     return missing
 
-# chatbot/fuzzy/pipeline.py (thêm)
 
-def build_followup_question(missing_fields: list[str]) -> str:
-    questions = []
+def _build_followup_question(missing: List[str]) -> str:
+    # Hỏi ngắn, có ví dụ để user trả lời nhanh
+    if not missing:
+        return "Bạn có thể bổ sung thêm chi tiết (ví dụ: vật liệu, loại gia công, đường kính) để mình chấm fuzzy chính xác hơn không?"
+    if missing == ["vat_lieu"]:
+        return "Bạn đang gia công vật liệu gì? (vd: C45, S45C, SUS304, nhôm 6061...)"
+    if missing == ["loai_gia_cong"]:
+        return "Bạn đang làm dạng gia công nào? (vd: khoan / phay / taro / doa / tiện...)"
+    return "Mình cần thêm: " + ", ".join(missing) + ". Bạn bổ sung giúp mình nhé."
 
-    if "vat_lieu" in missing_fields:
-        questions.append("- Vật liệu gia công là gì? (VD: S45C, SUS304, nhôm A6061…)")
 
-    if "loai_gia_cong" in missing_fields:
-        questions.append("- Bạn đang cần gia công gì? (khoan / phay mặt phẳng / phay rãnh / taro / doa…)")
+def _build_result_text(scored: List[Tuple[float, Any, dict]], topk: int, criteria: dict, mode: str) -> str:
+    top = scored[:topk]
+    if not top:
+        return (
+            "Hiện chưa tìm được thiết bị phù hợp sau khi chấm fuzzy. "
+            "Bạn thử mô tả rõ hơn (vật liệu, kiểu gia công, kích thước, yêu cầu bề mặt...) nhé."
+        )
 
-    # nếu sau này bổ sung thêm field:
-    # if "duong_kinh" in missing_fields:
-    #     questions.append("- Đường kính lỗ / dao khoảng bao nhiêu (mm)?")
+    lines = []
+    lines.append("✅ **Kết quả đề xuất theo FUZZY (điểm 0..100):**")
+    for i, (s, dev, br) in enumerate(top, 1):
+        name = getattr(dev, "ten_tool", None) or getattr(dev, "ten_thiet_bi", None) or str(dev)
+        code = getattr(dev, "ma_tool", None) or getattr(dev, "ma_noi_bo", None) or ""
+        score100 = round(s * 100, 1)
+        lines.append(f"{i}. **{name}** {f'({code})' if code else ''}  ➜  **{score100}**")
+        # mini explain: show top 2 criteria contributions
+        if br:
+            ranked = sorted(br.items(), key=lambda x: x[1], reverse=True)[:3]
+            why = ", ".join([f"{k}:{round(v*100)}%" for k, v in ranked])
+            lines.append(f"   - vì khớp: {why}")
 
-    if not questions:
-        return "Bạn có thể mô tả chi tiết hơn về yêu cầu gia công không?"
+    # gợi ý hỏi "tại sao"
+    lines.append("")
+    lines.append("🧠 Bạn có thể hỏi: **“Tại sao chọn số 1?”** để mình giải thích chi tiết theo từng tiêu chí fuzzy.")
+    return "\n".join(lines)
 
-    intro = "Mình đã tìm được vài lựa chọn tạm phù hợp, nhưng để đề xuất chính xác hơn, cho mình hỏi thêm:\n"
-    return intro + "\n".join(questions)
+
+def run_fuzzy_suggest(user_message: str, debug: bool = False, model: str | None = None) -> dict:
+    """
+    Trả về dict:
+    {
+      status: "ok" | "need_more_info" | "error",
+      message: str,
+      criteria: dict|None,
+      scored: list (top scored raw) để dùng làm UI/debug,
+      meta: {...}  (confidence, filled_fields, topk_mode, ...)
+    }
+    """
+    criteria, raw, err = call_ai_for_criteria(user_message, model=model)
+
+    if debug:
+        print("[FUZZY] model:", model)
+        print("[FUZZY] raw criteria:", raw[:500])
+        print("[FUZZY] parse err:", err)
+
+    if not criteria:
+        return {
+            "status": "error",
+            "message": "Mình chưa tách được tiêu chí từ câu hỏi (AI parse lỗi). Bạn thử mô tả lại rõ hơn nhé.",
+            "criteria": None,
+            "scored": [],
+            "meta": {"parse_error": str(err) if err else None},
+        }
+
+    filled = _filled_fields(criteria)
+    missing_crit = _missing_critical(criteria)
+
+    # Nếu thiếu critical -> hỏi thêm (fuzzy follow-up)
+    if missing_crit:
+        q = _build_followup_question(missing_crit)
+        return {
+            "status": "need_more_info",
+            "message": "⚠️ Chưa đủ thông tin để chấm FUZZY chuẩn.\n" + q,
+            "criteria": criteria,
+            "scored": [],
+            "meta": {"filled_fields": filled, "missing": missing_crit, "confidence": criteria.get("confidence", 0.5)},
+        }
+
+    # Lấy candidates + chấm điểm
+    candidates, used_type = get_candidates(criteria)
+    scored = score_all_candidates(candidates, criteria)
+
+    # Quy tắc top-k theo độ "đủ thông tin":
+    if len(filled) <= 2:
+        topk = 3
+        mode = "few_fields_top3"
+    elif len(filled) <= 3:
+        topk = 2
+        mode = "mid_fields_top2"
+    else:
+        topk = 1
+        mode = "rich_fields_top1"
+
+    msg = _build_result_text(scored, topk=topk, criteria=criteria, mode=mode)
+
+    gap = None
+    if len(scored) >= 2:
+        gap = float(scored[0][0] - scored[1][0])
+    plot = build_plot(criteria, scored)
+
+    if debug:
+        print("[FUZZY][PLOT] keys:", plot.get("criteria", {}).keys())
+
+    return {
+        "status": "ok",
+        "message": msg,
+        "criteria": criteria,
+        "scored": scored[:10],
+        "meta": {
+            "loai_thiet_bi": used_type,
+            "filled_fields": filled,
+            "missing": missing_crit,
+            "confidence": float(criteria.get("confidence", 0.5)),
+            "topk_mode": mode,
+            "gap_top12": gap,
+            "plot": plot,   # ✅ QUAN TRỌNG
+        },
+    }
 

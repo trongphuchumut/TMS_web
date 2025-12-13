@@ -1,10 +1,13 @@
-<!-- ================= CHATBOT WIDGET ================= -->
+<!-- ================= CHATBOT WIDGET (FULL, FIXED) ================= -->
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
   :root {
     --primary-color: #4361ee;
+    /* TMS theme fallback (nếu base.html chưa khai báo) */
+    --blue-tech: #38bdf8;
+    --blue-strong: #0f172a;
     --primary-dark: #3a56d4;
     --bg-color: #f5f7fa;
     --text-color: #2b2d42;
@@ -55,7 +58,7 @@
   }
 
   .chat-container {
-    width: 360px;
+    width: 390px;
     max-width: calc(100% - 40px);
     position: fixed;
     bottom: 95px;
@@ -78,6 +81,7 @@
     opacity: 1;
   }
 
+  /* Header: KHÔNG toggle bằng click vào header nữa. Chỉ nút X đóng. */
   .chat-header {
     background: var(--blue-tech);
     color: #0f172a;
@@ -85,7 +89,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    cursor: pointer;
+  }
+
+  .chat-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .chat-header-title i {
@@ -100,14 +109,10 @@
     font-size: 14px;
   }
 
-  .chat-header i.fas.fa-times {
-    font-size: 18px;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-  }
-
-  .chat-header i.fas.fa-times:hover {
-    opacity: 1;
+  .chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .chat-messages {
@@ -224,22 +229,89 @@
     .chat-container { right: 20px; bottom: 90px; }
     .chat-toggle { right: 20px; bottom: 20px; }
   }
+
+  /* ===== MODEL SWITCH UI (ADD-ON) ===== */
+  .model-badge{
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(15,23,42,0.12);
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  .model-select{
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: rgba(255,255,255,0.85);
+    padding: 0 10px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .mini-btn{
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: rgba(255,255,255,0.85);
+    color: #0f172a;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: all .15s ease;
+  }
+
+  .mini-btn:hover{
+    transform: translateY(-1px);
+    background: #fff;
+  }
+
+  .mini-btn.active{
+    border-color: rgba(56,189,248,0.65);
+    box-shadow: 0 0 0 2px rgba(56,189,248,0.25);
+  }
 </style>
 
 <!-- CHATBOT BUTTON -->
-<button class="chat-toggle" id="chatToggle">
+<button class="chat-toggle" id="chatToggle" type="button">
   <i class="fas fa-comment-dots"></i>
 </button>
 
 <!-- CHATBOX PANEL -->
 <div class="chat-container" id="chatbox">
-  <div class="chat-header" onclick="toggleChat()">
+
+  <!-- HEADER (FIXED STRUCTURE) -->
+  <div class="chat-header">
     <div class="chat-header-title">
       <i class="fas fa-robot"></i>
       <span>Chatbot Hỗ Trợ</span>
+     
     </div>
-    <i class="fas fa-times"></i>
+
+    <div class="chat-header-actions" onclick="event.stopPropagation()">
+    <select class="model-select" id="modelSelect">
+      <option value="gpt-oss:120b-cloud">gpt-oss (120B cloud)</option>
+      <option value="gemma3:4b">gemma3 (4B local)</option>
+    </select>
+
+
+      <button class="mini-btn" id="btnExplain" type="button" title="Bật/tắt giải thích fuzzy">
+        <i class="fas fa-lightbulb"></i>
+ ng     </button>
+
+      <button class="mini-btn" id="btnFuzzyLast" type="button" title="Xem tam giác fuzzy gần nhất">
+        <i class="fas fa-chart-area"></i>
+      </button>
+
+      <button class="mini-btn" id="btnClose" type="button" title="Đóng">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
   </div>
+  <!-- /HEADER -->
 
   <div class="chat-messages" id="messages"></div>
 
@@ -251,13 +323,28 @@
       placeholder="Nhập tin nhắn..."
       autocomplete="off"
     >
-    <button class="send-button" onclick="sendMessage()">
+    <button class="send-button" type="button" onclick="sendMessage()">
       <i class="fas fa-paper-plane"></i>
     </button>
   </div>
 </div>
 
 <script>
+  // ===== Model & Fuzzy Explain State =====
+  let tmsModel = localStorage.getItem("tms_chat_model") || "gpt-oss:120b-cloud";
+
+  let explainFuzzy = (localStorage.getItem("tms_explain_fuzzy") || "1") === "1";
+
+  function setModelUI() {
+    const sel = document.getElementById("modelSelect");
+    const badge = document.getElementById("modelBadge");
+    if (sel) sel.value = tmsModel;
+    if (badge) badge.textContent = tmsModel;
+
+    const btnExplain = document.getElementById("btnExplain");
+    if (btnExplain) btnExplain.classList.toggle("active", explainFuzzy);
+  }
+
   function toggleChat() {
     const chatbox = document.getElementById("chatbox");
     const chatToggle = document.getElementById("chatToggle");
@@ -353,19 +440,17 @@
     appendMessage("Bạn", message, "user-message");
     userInput.value = "";
 
-    console.log("SEND FETCH:", new Date().toISOString());
-
     fetch("/chatbot/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: message })
-    })
-      .then(res => {
-        console.log("RES STATUS:", res.status);
-        return res.json();
+      body: JSON.stringify({
+        message: message,
+        model: tmsModel,
+        explain_fuzzy: explainFuzzy ? 1 : 0
       })
+    })
+      .then(res => res.json())
       .then(data => {
-        console.log("RES JSON:", data);
         appendTypingMessage("Bot", data.reply, "bot-message");
       })
       .catch(err => {
@@ -380,16 +465,40 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     loadMessages();
+    setModelUI();
 
     document.getElementById("user-input").addEventListener("keypress", function (e) {
       if (e.key === "Enter") sendMessage();
     });
 
     document.getElementById("chatToggle").addEventListener("click", toggleChat);
+    document.getElementById("btnClose").addEventListener("click", toggleChat);
+
+    document.getElementById("modelSelect")?.addEventListener("change", function () {
+      tmsModel = this.value;
+      localStorage.setItem("tms_chat_model", tmsModel);
+      setModelUI();
+      appendMessage("Hệ thống", `Đã chuyển mô hình: <b>${tmsModel}</b>`, "bot-message");
+    });
+
+    document.getElementById("btnExplain")?.addEventListener("click", function () {
+      explainFuzzy = !explainFuzzy;
+      localStorage.setItem("tms_explain_fuzzy", explainFuzzy ? "1" : "0");
+      setModelUI();
+      appendMessage(
+        "Hệ thống",
+        explainFuzzy ? "Bật giải thích fuzzy ✅" : "Tắt giải thích fuzzy ❎",
+        "bot-message"
+      );
+    });
+
+    document.getElementById("btnFuzzyLast")?.addEventListener("click", function () {
+      window.open("/chatbot/fuzzy/last/", "_blank");
+    });
   });
 
   function tmsLogout() {
-  localStorage.removeItem('tms_chat_history');
-  window.location.href = '/logout/';
-}
+    localStorage.removeItem('tms_chat_history');
+    window.location.href = '/logout/';
+  }
 </script>

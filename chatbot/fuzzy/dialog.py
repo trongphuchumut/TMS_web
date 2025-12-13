@@ -1,60 +1,88 @@
 # chatbot/fuzzy/dialog.py
+"""
+Quản lý hội thoại FUZZY (follow-up hỏi thêm thông tin).
+
+Ý tưởng:
+- Khi thiếu info -> pipeline trả need_more_info + criteria hiện tại
+- Lưu vào session: fuzzy_state = {criteria, turns_left, last_question, last_missing}
+- User trả lời -> parse criteria mới từ câu trả lời, merge vào criteria cũ
+- Có cơ chế thoát + TTL để "làm mờ" ngữ cảnh tránh nhầm
+"""
+from __future__ import annotations
+
 import json
-from .pipeline import run_fuzzy_suggest, CRITICAL_FIELDS
+from copy import deepcopy
+from typing import Any, Dict, Tuple
+
 from .criteria_parser import call_ai_for_criteria
-from ..ai_client import call_ai
+from .pipeline import run_fuzzy_suggest
 
 
-def merge_criteria_with_followup(old_criteria: dict, followup_message: str) -> dict:
+FUZZY_TTL_TURNS = 6  # sau 6 lượt không liên quan thì auto reset
+
+
+def is_exit_message(text: str) -> bool:
+    t = (text or "").strip().lower()
+    exit_words = ("thoi", "thôi", "stop", "dung", "dừng", "huy", "hủy", "cancel", "khong can", "không cần")
+    return any(w in t for w in exit_words)
+
+
+def merge_criteria(old: dict, new: dict) -> dict:
     """
-    Cách đơn giản: gọi AI lần nữa, yêu cầu trả về JSON tiêu chí mới
-    dựa trên:
-      - tiêu chí cũ
-      - câu trả lời follow-up của user
+    Merge: field mới != None thì overwrite.
     """
-
-    prompt = (
-        "Bạn là hệ thống cập nhật tiêu chí chọn tool/holder cho gia công.\n"
-        "Đây là tiêu chí hiện tại (JSON):\n"
-        f"{json.dumps(old_criteria, ensure_ascii=False)}\n\n"
-        "Người dùng vừa cung cấp thêm thông tin bổ sung:\n"
-        f"- \"{followup_message}\"\n\n"
-        "Hãy trả về lại JSON tiêu chí ĐÃ CẬP NHẬT, giữ nguyên các field cũ nếu user không đổi.\n"
-        "Chỉ trả JSON, không giải thích thêm."
-    )
-
-    raw = call_ai(prompt)
-    try:
-        new_criteria = json.loads(raw)
-        return new_criteria
-    except Exception:
-        # nếu lỗi thì giữ nguyên (xấu nhất vẫn dùng old_criteria)
-        return old_criteria
+    out = deepcopy(old or {})
+    for k, v in (new or {}).items():
+        if k == "uu_tien" and isinstance(v, dict):
+            out.setdefault("uu_tien", {})
+            for kk, vv in v.items():
+                if vv is not None:
+                    out["uu_tien"][kk] = vv
+            continue
+        if v is not None:
+            out[k] = v
+    # confidence: lấy max (vì merge)
+    out["confidence"] = max(float(old.get("confidence", 0.5)), float(new.get("confidence", 0.5)))
+    return out
 
 
-def continue_fuzzy_dialog(state: dict, followup_message: str, debug: bool = False) -> dict:
+def handle_fuzzy_followup(user_message: str, fuzzy_state: dict, debug: bool = False) -> dict:
     """
-    state: lưu trong session, dạng:
-      {
-        "criteria": {...},
-      }
-    followup_message: câu user vừa trả lời thêm.
-
-    Trả về cùng struct như run_fuzzy_suggest:
-      {status, message, criteria, missing_fields}
+    fuzzy_state: {criteria: dict, turns_left: int, ...}
     """
-    old_criteria = state.get("criteria") or {}
-    new_criteria = merge_criteria_with_followup(old_criteria, followup_message)
+    if is_exit_message(user_message):
+        return {
+            "status": "exit",
+            "message": "Ok, mình tạm dừng phần FUZZY. Khi cần bạn mô tả lại yêu cầu gia công, mình tư vấn từ đầu nhé.",
+            "criteria": fuzzy_state.get("criteria"),
+            "meta": {"exit": True},
+        }
 
-    # chạy lại fuzzy nhưng với tiêu chí mới
-    # để tái sử dụng pipeline, ta có 2 lựa chọn:
-    #  1) gọi lại run_fuzzy_suggest với message gốc + followup gộp
-    #  2) viết 1 hàm run_fuzzy_with_criteria(new_criteria)
-    #
-    # Ở đây cho đơn giản, ta giả lập "user_message" là bản tóm tắt tiêu chí mới.
-    pseudo_user_message = f"(update) {json.dumps(new_criteria, ensure_ascii=False)}"
+    old = fuzzy_state.get("criteria") or {}
 
-    result = run_fuzzy_suggest(pseudo_user_message, debug=debug)
-    # ghi đè criteria bằng new_criteria (do run_fuzzy_suggest sẽ gọi AI lại)
-    result["criteria"] = new_criteria
+    # Parse tiêu chí từ câu trả lời follow-up
+    new_criteria, raw, err = call_ai_for_criteria(user_message)
+
+    if debug:
+        print("[FUZZY_FOLLOWUP] old:", old)
+        print("[FUZZY_FOLLOWUP] raw:", raw[:300])
+        print("[FUZZY_FOLLOWUP] err:", err)
+        print("[FUZZY_FOLLOWUP] new:", new_criteria)
+
+    if not new_criteria:
+        # Không parse được -> hỏi lại, nhưng giảm TTL để tránh loop
+        turns_left = int(fuzzy_state.get("turns_left", FUZZY_TTL_TURNS)) - 1
+        return {
+            "status": "need_more_info",
+            "message": "Mình chưa bắt được ý bạn ở phần bổ sung. Bạn trả lời ngắn theo mẫu giúp mình:\n"
+                       "- Vật liệu: ...\n- Gia công: ...\n- ĐK (nếu có): ...",
+            "criteria": old,
+            "meta": {"turns_left": turns_left, "parse_error": str(err) if err else None},
+        }
+
+    merged = merge_criteria(old, new_criteria)
+
+    # Chạy lại fuzzy với criteria merged: trick bằng cách đưa JSON trực tiếp
+    result = run_fuzzy_suggest(json.dumps(merged, ensure_ascii=False), debug=debug)
+    result["criteria"] = merged
     return result
