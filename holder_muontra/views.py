@@ -2,7 +2,6 @@
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.utils import timezone
 from django.db.models import Q
 from iot_gateway.mqtt import send_holder_borrow, send_holder_return
 import random
@@ -10,6 +9,45 @@ import random
 from holder.models import Holder
 from .models import HolderHistory
 
+
+# =========================
+# Helpers
+# =========================
+
+def _get_user_rfid_from_db(request) -> str:
+    """
+    Lấy RFID từ UserProfile (ưu tiên DB, không lấy từ form).
+    Trả về "" nếu không có.
+    """
+    if not request.user.is_authenticated:
+        return ""
+
+    try:
+        profile = request.user.userprofile
+        rfid = (profile.rfid_code or "").strip()
+        return rfid
+    except Exception:
+        return ""
+
+
+def _mark_failed(history_obj, reason: str) -> None:
+    """
+    Cố gắng set FAILED + lý do fail nếu model có field.
+    Không làm app crash nếu model không có field.
+    """
+    try:
+        history_obj.trang_thai = "FAILED"
+        if hasattr(history_obj, "ly_do_fail"):
+            history_obj.ly_do_fail = (reason or "")[:255]
+        history_obj.save()
+    except Exception:
+        # Không muốn ném lỗi ngược ra user, chỉ log nhẹ
+        pass
+
+
+# =========================
+# Views
+# =========================
 
 def history_holder(request):
     """
@@ -71,10 +109,18 @@ def borrow_for_holder(request, holder_id):
         muc_dich = request.POST.get("muc_dich")
         du_an = request.POST.get("du_an", "").strip()
         mo_ta = request.POST.get("mo_ta", "").strip()
-        user_rfid = request.POST.get("user_rfid", "U000").strip()
 
         if not muc_dich:
             messages.error(request, "Bạn chưa chọn mục đích mượn.")
+            return redirect(request.path)
+
+        # ✅ Lấy user_rfid từ DB (UserProfile)
+        user_rfid = _get_user_rfid_from_db(request)
+        if not user_rfid:
+            messages.error(
+                request,
+                "Tài khoản chưa có RFID (UserProfile.rfid_code). Vui lòng cập nhật RFID trong Admin trước khi mượn."
+            )
             return redirect(request.path)
 
         # ======== 1) GENERATE tx_id ========
@@ -88,7 +134,7 @@ def borrow_for_holder(request, holder_id):
             mo_ta=mo_ta,
             trang_thai="PENDING",       # CHỜ TỦ PHẢN HỒI
             tx_id=tx_id,                # GẮN TX_ID
-            nguoi_thuc_hien=request.user if request.user.is_authenticated else None,
+            nguoi_thuc_hien=request.user,
         )
 
         # ======== 3) Gửi lệnh MQTT ========
@@ -96,14 +142,18 @@ def borrow_for_holder(request, holder_id):
         cell = holder.ngan or 1
         holder_rfid = holder.ma_noi_bo
 
-
-        send_holder_borrow(
-            locker=locker,
-            cell=cell,
-            user_rfid=user_rfid,
-            holder_rfid_expected=holder_rfid,
-            tx_id=tx_id,
-        )
+        try:
+            send_holder_borrow(
+                locker=locker,
+                cell=cell,
+                user_rfid=user_rfid,  # ✅ gửi RFID thật từ DB
+                holder_rfid_expected=holder_rfid,
+                tx_id=tx_id,
+            )
+        except Exception as e:
+            _mark_failed(history, f"mqtt_error: {e}")
+            messages.error(request, f"Không gửi được lệnh MQTT: {e}")
+            return redirect("holder_muontra:history_holder")
 
         # ======== 4) BÁO NGƯỜI DÙNG ========
         messages.success(
@@ -136,13 +186,20 @@ def return_for_holder(request, holder_id):
     if request.method == "POST":
         ly_do = request.POST.get("ly_do_tra", "")
         mo_ta_tra = request.POST.get("mo_ta_tra", "").strip()
-        user_rfid = request.POST.get("user_rfid", "U000").strip()
+
+        # ✅ Lấy user_rfid từ DB (UserProfile)
+        user_rfid = _get_user_rfid_from_db(request)
+        if not user_rfid:
+            messages.error(
+                request,
+                "Tài khoản chưa có RFID (UserProfile.rfid_code). Vui lòng cập nhật RFID trong Admin trước khi trả."
+            )
+            return redirect(request.path)
 
         # ======== 1) tx_id ========
         tx_id = random.randint(1, 999_999_999)
 
         # ======== 2) Tạo LỊCH SỬ trả PENDING ========
-        # thay vì sửa last_history, ta tạo 1 dòng mới
         history_return = HolderHistory.objects.create(
             holder=holder,
             muc_dich=last_history.muc_dich,
@@ -150,9 +207,7 @@ def return_for_holder(request, holder_id):
             mo_ta=mo_ta_tra,
             trang_thai="PENDING",
             tx_id=tx_id,
-            nguoi_thuc_hien=(
-                request.user if request.user.is_authenticated else None
-            ),
+            nguoi_thuc_hien=request.user,
             ly_do_tra=ly_do if hasattr(HolderHistory, "ly_do_tra") else "",
         )
 
@@ -161,14 +216,18 @@ def return_for_holder(request, holder_id):
         cell = holder.ngan or 1
         holder_rfid = holder.ma_noi_bo
 
-
-        send_holder_return(
-            locker=locker,
-            cell=cell,
-            user_rfid=user_rfid,
-            holder_rfid_expected=holder_rfid,
-            tx_id=tx_id,
-        )
+        try:
+            send_holder_return(
+                locker=locker,
+                cell=cell,
+                user_rfid=user_rfid,  # ✅ gửi RFID thật từ DB
+                holder_rfid_expected=holder_rfid,
+                tx_id=tx_id,
+            )
+        except Exception as e:
+            _mark_failed(history_return, f"mqtt_error: {e}")
+            messages.error(request, f"Không gửi được lệnh MQTT: {e}")
+            return redirect("holder_muontra:history_holder")
 
         messages.success(request, "Đã yêu cầu trả holder. Đang chờ tủ xử lý (PENDING).")
         return redirect("holder_muontra:wait_holder", tx_id=tx_id)
@@ -177,6 +236,8 @@ def return_for_holder(request, holder_id):
         "holder": holder,
         "last_history": last_history,
     })
+
+
 def wait_holder(request, tx_id):
     """
     Trang chờ tủ xử lý giao dịch holder. JS sẽ gọi API để kiểm tra trạng thái.
