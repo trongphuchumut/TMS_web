@@ -1,5 +1,4 @@
 # holder_muontra/views.py
-
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.db.models import Q
@@ -10,49 +9,7 @@ from holder.models import Holder
 from .models import HolderHistory
 
 
-# =========================
-# Helpers
-# =========================
-
-def _get_user_rfid_from_db(request) -> str:
-    """
-    Lấy RFID từ UserProfile (ưu tiên DB, không lấy từ form).
-    Trả về "" nếu không có.
-    """
-    if not request.user.is_authenticated:
-        return ""
-
-    try:
-        profile = request.user.userprofile
-        rfid = (profile.rfid_code or "").strip()
-        return rfid
-    except Exception:
-        return ""
-
-
-def _mark_failed(history_obj, reason: str) -> None:
-    """
-    Cố gắng set FAILED + lý do fail nếu model có field.
-    Không làm app crash nếu model không có field.
-    """
-    try:
-        history_obj.trang_thai = "FAILED"
-        if hasattr(history_obj, "ly_do_fail"):
-            history_obj.ly_do_fail = (reason or "")[:255]
-        history_obj.save()
-    except Exception:
-        # Không muốn ném lỗi ngược ra user, chỉ log nhẹ
-        pass
-
-
-# =========================
-# Views
-# =========================
-
 def history_holder(request):
-    """
-    Trang xem lịch sử mượn/trả holder + bộ lọc đơn giản.
-    """
     q = request.GET.get("q", "").strip()
     muc_dich = request.GET.get("muc_dich", "")
     trang_thai = request.GET.get("trang_thai", "")
@@ -92,7 +49,7 @@ def history_holder(request):
 def borrow_for_holder(request, holder_id):
     holder = get_object_or_404(Holder, pk=holder_id)
 
-    # Không cho mượn nếu holder không sẵn sàng
+    # Sẵn sàng theo model hiện tại của ông: "dang_su_dung" (label: Đang sẵn sàng)
     if holder.trang_thai_tai_san != "dang_su_dung":
         messages.error(
             request,
@@ -100,7 +57,6 @@ def borrow_for_holder(request, holder_id):
         )
         return redirect("holder_muontra:history_holder")
 
-    # Nếu đang có phiếu mượn đang mở -> chặn
     if HolderHistory.objects.filter(holder=holder, trang_thai="DANG_MUON").exists():
         messages.error(request, "Holder này đã có phiếu mượn đang mở.")
         return redirect("holder_muontra:history_holder")
@@ -109,128 +65,94 @@ def borrow_for_holder(request, holder_id):
         muc_dich = request.POST.get("muc_dich")
         du_an = request.POST.get("du_an", "").strip()
         mo_ta = request.POST.get("mo_ta", "").strip()
+        user_rfid = request.POST.get("user_rfid", "U000").strip()
 
         if not muc_dich:
             messages.error(request, "Bạn chưa chọn mục đích mượn.")
             return redirect(request.path)
 
-        # ✅ Lấy user_rfid từ DB (UserProfile)
-        user_rfid = _get_user_rfid_from_db(request)
-        if not user_rfid:
-            messages.error(
-                request,
-                "Tài khoản chưa có RFID (UserProfile.rfid_code). Vui lòng cập nhật RFID trong Admin trước khi mượn."
-            )
-            return redirect(request.path)
-
-        # ======== 1) GENERATE tx_id ========
         tx_id = random.randint(1, 999_999_999)
 
-        # ======== 2) TẠO LỊCH SỬ DẠNG PENDING ========
-        history = HolderHistory.objects.create(
+        HolderHistory.objects.create(
             holder=holder,
             muc_dich=muc_dich,
             du_an=du_an,
             mo_ta=mo_ta,
-            trang_thai="PENDING",       # CHỜ TỦ PHẢN HỒI
-            tx_id=tx_id,                # GẮN TX_ID
-            nguoi_thuc_hien=request.user,
+            trang_thai="PENDING",
+            tx_id=tx_id,
+            nguoi_thuc_hien=request.user if request.user.is_authenticated else None,
         )
 
-        # ======== 3) Gửi lệnh MQTT ========
         locker = holder.tu or "A"
         cell = holder.ngan or 1
         holder_rfid = holder.ma_noi_bo
 
-        try:
-            send_holder_borrow(
-                locker=locker,
-                cell=cell,
-                user_rfid=user_rfid,  # ✅ gửi RFID thật từ DB
-                holder_rfid_expected=holder_rfid,
-                tx_id=tx_id,
-            )
-        except Exception as e:
-            _mark_failed(history, f"mqtt_error: {e}")
-            messages.error(request, f"Không gửi được lệnh MQTT: {e}")
-            return redirect("holder_muontra:history_holder")
-
-        # ======== 4) BÁO NGƯỜI DÙNG ========
-        messages.success(
-            request,
-            "Đã gửi yêu cầu mượn holder. Đang chờ tủ phản hồi (PENDING)."
+        send_holder_borrow(
+            locker=locker,
+            cell=cell,
+            user_rfid=user_rfid,
+            holder_rfid_expected=holder_rfid,
+            tx_id=tx_id,
         )
-        return redirect("holder_muontra:wait_holder", tx_id=tx_id)
 
-    context = {
+        messages.success(request, "Đã gửi yêu cầu mượn holder. Đang chờ tủ phản hồi (PENDING).")
+
+        # ✅ SỬA 1: truyền mode=borrow
+        return redirect("holder_muontra:wait_holder", tx_id=tx_id, mode="borrow")
+
+    return render(request, "holder_borrow.html", {
         "holder": holder,
         "MUC_DICH_CHOICES": HolderHistory.MUC_DICH_CHOICES,
-    }
-    return render(request, "holder_borrow.html", context)
+    })
 
 
 def return_for_holder(request, holder_id):
     holder = get_object_or_404(Holder, pk=holder_id)
 
+    # Đang mượn theo model: "dang_duoc_muon"
+    if holder.trang_thai_tai_san != "dang_duoc_muon":
+        messages.error(request, "Holder hiện không ở trạng thái đang được mượn.")
+        return redirect("holder_muontra:history_holder")
+
     last_history = (
         HolderHistory.objects
-        .filter(holder=holder, trang_thai="DANG_MUON")
+        .filter(holder=holder, trang_thai__in=["DANG_MUON", "SUCCESS", "PENDING"])
         .order_by("-thoi_gian_muon")
         .first()
     )
 
-    if not last_history:
-        messages.error(request, "Không có phiếu mượn đang mở.")
-        return redirect("holder_muontra:history_holder")
-
     if request.method == "POST":
-        ly_do = request.POST.get("ly_do_tra", "")
         mo_ta_tra = request.POST.get("mo_ta_tra", "").strip()
+        user_rfid = request.POST.get("user_rfid", "U000").strip()
 
-        # ✅ Lấy user_rfid từ DB (UserProfile)
-        user_rfid = _get_user_rfid_from_db(request)
-        if not user_rfid:
-            messages.error(
-                request,
-                "Tài khoản chưa có RFID (UserProfile.rfid_code). Vui lòng cập nhật RFID trong Admin trước khi trả."
-            )
-            return redirect(request.path)
-
-        # ======== 1) tx_id ========
         tx_id = random.randint(1, 999_999_999)
 
-        # ======== 2) Tạo LỊCH SỬ trả PENDING ========
-        history_return = HolderHistory.objects.create(
+        HolderHistory.objects.create(
             holder=holder,
-            muc_dich=last_history.muc_dich,
-            du_an=last_history.du_an,
+            muc_dich=(last_history.muc_dich if last_history else "SU_DUNG"),
+            du_an=(last_history.du_an if last_history else ""),
             mo_ta=mo_ta_tra,
             trang_thai="PENDING",
             tx_id=tx_id,
-            nguoi_thuc_hien=request.user,
-            ly_do_tra=ly_do if hasattr(HolderHistory, "ly_do_tra") else "",
+            nguoi_thuc_hien=request.user if request.user.is_authenticated else None,
         )
 
-        # ======== 3) Gửi MQTT ========
         locker = holder.tu or "A"
         cell = holder.ngan or 1
         holder_rfid = holder.ma_noi_bo
 
-        try:
-            send_holder_return(
-                locker=locker,
-                cell=cell,
-                user_rfid=user_rfid,  # ✅ gửi RFID thật từ DB
-                holder_rfid_expected=holder_rfid,
-                tx_id=tx_id,
-            )
-        except Exception as e:
-            _mark_failed(history_return, f"mqtt_error: {e}")
-            messages.error(request, f"Không gửi được lệnh MQTT: {e}")
-            return redirect("holder_muontra:history_holder")
+        send_holder_return(
+            locker=locker,
+            cell=cell,
+            user_rfid=user_rfid,
+            holder_rfid_expected=holder_rfid,
+            tx_id=tx_id,
+        )
 
-        messages.success(request, "Đã yêu cầu trả holder. Đang chờ tủ xử lý (PENDING).")
-        return redirect("holder_muontra:wait_holder", tx_id=tx_id)
+        messages.success(request, "Đã gửi yêu cầu trả holder. Đang chờ tủ xử lý (PENDING).")
+
+        # ✅ SỬA 2: truyền mode=return
+        return redirect("holder_muontra:wait_holder", tx_id=tx_id, mode="return")
 
     return render(request, "holder_return.html", {
         "holder": holder,
@@ -238,8 +160,6 @@ def return_for_holder(request, holder_id):
     })
 
 
-def wait_holder(request, tx_id):
-    """
-    Trang chờ tủ xử lý giao dịch holder. JS sẽ gọi API để kiểm tra trạng thái.
-    """
-    return render(request, "holder_wait.html", {"tx_id": tx_id})
+# ✅ SỬA 3: nhận thêm mode
+def wait_holder(request, tx_id, mode):
+    return render(request, "holder_wait.html", {"tx_id": tx_id, "mode": mode})

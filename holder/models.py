@@ -14,18 +14,17 @@ class Holder(models.Model):
     nguoi_quan_ly = models.CharField(max_length=100, blank=True, null=True)
     
     TRANG_THAI_CHOICES = [
-        ("dang_su_dung", "Đang sẵn sàng"),
+        ("san_sang", "Sẵn sàng"),
+        ("dang_duoc_muon", "Đang được mượn"),
         ("dang_bao_tri", "Đang bảo trì"),
         ("ngung_su_dung", "Ngừng sử dụng"),
-        ("dang_duoc_muon", "Đang được mượn"),
     ]
+
     trang_thai_tai_san = models.CharField(
         max_length=20,
         choices=TRANG_THAI_CHOICES,
-        blank=True,
-        null=True,
+        default="san_sang",
     )
-
     # THÔNG SỐ KỸ THUẬT & KHO
     chuan_ga = models.CharField(max_length=50, blank=True, null=True)
     loai_kep = models.CharField(max_length=50, blank=True, null=True)

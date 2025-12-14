@@ -121,15 +121,6 @@
           <div class="hr-grid">
 
               <div>
-                  <label class="hr-label">Lý do trả</label>
-                  <select name="ly_do_tra" class="hr-select" required>
-                      <option value="">— Chọn lý do —</option>
-                      <option value="ket_thuc">Kết thúc sử dụng</option>
-                      <option value="bao_tri_xong">Trả sau bảo trì</option>
-                  </select>
-              </div>
-
-              <div>
                   <label class="hr-label">Người trả</label>
                   <input class="hr-input" type="text"
                          value="{{ request.user.get_full_name|default:request.user.username }}" readonly>

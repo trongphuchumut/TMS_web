@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}Đang xử lý giao dịch holder{% endblock %}
 
 {% block content %}
@@ -23,69 +22,57 @@
 </div>
 
 <script>
-  const checkUrl = "{% url 'holder_muontra:check_holder_tx' tx_id=tx_id %}";
+  const mode = "{{ mode|default:'borrow' }}";  // 'borrow' | 'return'
+  const checkUrl = (mode === "return")
+    ? "{% url 'holder_muontra:api_check_return_tx' tx_id=tx_id %}"
+    : "{% url 'holder_muontra:api_check_borrow_tx' tx_id=tx_id %}";
+
   const redirectUrl = "{% url 'holder_muontra:history_holder' %}";
+  const startMs = Date.now();
+  const MAX_WAIT_SEC = 60;
 
-  function checkStatus() {
-    fetch(checkUrl)
-      .then(res => res.json())
-      .then(data => {
-        if (!data || !data.status) return;
+  const box = document.getElementById("status-box");
+  const text = document.getElementById("status-text");
 
-        const box = document.getElementById("status-box");
-        const text = document.getElementById("status-text");
-
-        if (data.status === "PENDING") {
-          text.textContent = "Đang chờ tủ xử lý...";
-        }
-
-        if (data.status === "SUCCESS") {
-          alert("✔ Giao dịch thành công!");
-          window.location.href = redirectUrl;
-        }
-
-        if (data.status === "FAILED") {
-          alert("❌ Giao dịch thất bại: " + (data.reason || "Không rõ lý do"));
-          window.location.href = redirectUrl;
-        }
-      })
-      .catch(err => {
-        console.error("Error checking holder tx:", err);
-      });
-  }
-
-  // Gọi mỗi 2 giây
-  setInterval(checkStatus, 2000);
-  let firstTick = Date.now();
-
-function checkStatus() {
-  fetch(checkUrl)
-    .then(res => res.json())
-    .then(data => {
+  async function checkStatus() {
+    try {
+      const res = await fetch(checkUrl, { cache: "no-store" });
+      const data = await res.json();
       if (!data || !data.status) return;
 
-      const elapsed = (Date.now() - firstTick) / 1000;
+      const elapsed = (Date.now() - startMs) / 1000;
 
       if (data.status === "PENDING") {
-        if (elapsed > 60) {
-          // Trường hợp hiếm: BE chưa đổi trạng thái kịp
-          alert("⏱ Hệ thống chờ quá lâu. Vui lòng kiểm tra tủ hoặc liên hệ kỹ thuật.");
+        text.textContent = `Đang chờ tủ xử lý... (${Math.floor(elapsed)}s)`;
+        if (elapsed > MAX_WAIT_SEC) {
+          alert("⏱ Hệ thống chờ quá lâu. Vui lòng kiểm tra tủ hoặc thử lại.");
           window.location.href = redirectUrl;
         }
         return;
       }
 
-      if (data.status === "SUCCESS") {
+      if (data.status === "SUCCESS" || data.status === "DANG_MUON" || data.status === "DA_TRA") {
         alert("✔ Giao dịch thành công!");
         window.location.href = redirectUrl;
+        return;
       }
 
       if (data.status === "FAILED") {
         alert("❌ Giao dịch thất bại: " + (data.reason || "timeout"));
         window.location.href = redirectUrl;
+        return;
       }
-    });
-}
 
+      // Trạng thái khác (hiếm)
+      text.textContent = "Trạng thái: " + data.status;
+
+    } catch (err) {
+      console.error("Error checking holder tx:", err);
+    }
+  }
+
+  // tick ngay 1 phát cho đỡ phải chờ 2s
+  checkStatus();
+  setInterval(checkStatus, 2000);
 </script>
 {% endblock %}
