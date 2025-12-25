@@ -1,0 +1,1019 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cuộc Phiêu Lưu Của Ổ Bánh Mì (8-bit)</title>
+  <style>
+    :root{
+      --bg0:#06121f;
+      --bg1:#0b2540;
+      --ui:#e9f3ff;
+      --ui2:#9bb7d3;
+      --accent:#ffd166;
+    }
+    html,body{height:100%;margin:0;background:#0b0f14;color:var(--ui);font-family:system-ui,-apple-system,Segoe UI,Roboto}
+    .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
+    canvas{
+      width:min(96vw, 1100px);
+      height:auto;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      background:#000;
+      image-rendering:pixelated;
+      image-rendering:crisp-edges;
+      box-shadow:0 18px 60px rgba(0,0,0,.55);
+    }
+    .note{
+      position:fixed;left:12px;bottom:12px;
+      font-size:12px;opacity:.86;color:var(--ui2);
+      background:rgba(0,0,0,.35);padding:10px 12px;border-radius:12px;
+      border:1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(6px);
+      max-width:min(92vw, 560px);
+      line-height:1.35;
+    }
+    kbd{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:11px;padding:2px 6px;border-radius:6px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.06);
+      color:var(--ui);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="c" width="480" height="270" aria-label="Banh Mi Adventure"></canvas>
+  </div>
+
+  <div class="note">
+    <div><b>CUỘC PHIÊU LƯU CỦA Ổ BÁNH MÌ</b> 🥖</div>
+    <div>
+      Di chuyển <kbd>←</kbd><kbd>→</kbd> | Nhảy <kbd>Z</kbd> / <kbd>Space</kbd> |
+      Bắt đầu/OK <kbd>Enter</kbd> | Tắt/Bật âm <kbd>M</kbd>
+    </div>
+    <div>
+      Power-up: 🥬 Rau = tốc độ | 🥩 Thịt = nhảy cao | 🧴 Sốt = +1 máu
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // =========================
+  // Canvas / Global
+  // =========================
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = false;
+
+  const W = canvas.width, H = canvas.height;
+  const HUD_H = 30;
+  const WORLD_H = H - HUD_H;
+
+  // =========================
+  // 8x8 SPRITES (đúng dữ liệu đã chốt)
+  // =========================
+  const banhMi8x8 = [
+    "..OOOO..",
+    ".OBBBBO.",
+    "OBBWWBBO",
+    "OBBEEBBO",
+    "OBBBBBBO",
+    "OBBBBBBO",
+    ".OBBBBO.",
+    "..OOOO..",
+  ];
+
+  const banhMiRun1 = [
+    "..OOOO..",
+    ".OBBBBO.",
+    "OBBWWBBO",
+    "OBBEEBBO",
+    "OBBBBBBO",
+    "OBBBBBBO",
+    ".OBBBBO.",
+    "..OO.O..",
+  ];
+  const banhMiRun2 = [
+    "..OOOO..",
+    ".OBBBBO.",
+    "OBBWWBBO",
+    "OBBEEBBO",
+    "OBBBBBBO",
+    "OBBBBBBO",
+    ".OBBBBO.",
+    "..O.OO..",
+  ];
+
+  const toppingRau8x8 = [
+    "..GGGG..",
+    ".GgGGgG.",
+    "GGgGGgGG",
+    "GGGGGGGG",
+    ".GGGGGG.",
+    "..GGGG..",
+    "...GG...",
+    "........",
+  ];
+
+  const toppingThit8x8 = [
+    "..RRRR..",
+    ".RrRRrR.",
+    "RRrrrrRR",
+    "RRrrrrRR",
+    "RRrrrrRR",
+    ".RrrrrR.",
+    "..RRRR..",
+    "........",
+  ];
+
+  // Sốt: dùng K/N/S để tránh đụng "B"
+  const toppingSot8x8 = [
+    "...KK...",
+    "..KNNK..",
+    "..KNNK..",
+    "..KSSK..",
+    "..KSSK..",
+    "..KSSK..",
+    "...KK...",
+    "........",
+  ];
+
+  const sesame8x8 = [
+    "........",
+    "..YY....",
+    ".YYYY...",
+    "..YY....",
+    "...YY...",
+    "..YYYY..",
+    "...YY...",
+    "........",
+  ];
+
+  const heart8x8 = [
+    ".PP..PP.",
+    "PPPPPPPP",
+    "PPPPPPPP",
+    ".PPPPPP.",
+    "..PPPP..",
+    "...PP...",
+    "....P...",
+    "........",
+  ];
+
+  const cat8x8 = [
+    "A....A..",
+    "AA..AA..",
+    ".AAAA...",
+    "aAaAaA..",
+    ".AAAA...",
+    "..aa....",
+    ".a..a...",
+    "........",
+  ];
+
+  const pan8x8 = [
+    "..QQQQ..",
+    ".QQQQQQ.",
+    "QQQQQQQQ",
+    ".QQQQQQ.",
+    "..QQQQ..",
+    "...||...",
+    "...||...",
+    "........",
+  ];
+
+  const palette = {
+    ".": null,
+    // Bánh mì
+    "O": "#5b2b1f",
+    "B": "#d08a2a",
+    "W": "#f3d7a1",
+    "E": "#1a0f0a",
+    // Rau
+    "G": "#1f8a3b",
+    "g": "#6ee07a",
+    // Thịt
+    "R": "#8b2d2d",
+    "r": "#d36a6a",
+    // Sốt
+    "K": "#2c2f3a",
+    "N": "#eaeaea",
+    "S": "#e63946",
+    // Mè
+    "Y": "#ffd166",
+    // Tim
+    "P": "#ff4d6d",
+    // Mèo
+    "A": "#3a3a3a",
+    "a": "#d8c7a1",
+    // Chảo
+    "Q": "#8d99ae",
+    "|": "#f1faee",
+  };
+
+  function drawSprite(ctx, sprite, x, y, pixelSize = 2, pal = palette, alpha = 1) {
+    if (alpha !== 1) ctx.globalAlpha = alpha;
+    for (let r = 0; r < 8; r++) {
+      const line = sprite[r];
+      for (let c = 0; c < 8; c++) {
+        const k = line[c];
+        const col = pal[k];
+        if (!col) continue;
+        ctx.fillStyle = col;
+        ctx.fillRect((x | 0) + c * pixelSize, (y | 0) + r * pixelSize, pixelSize, pixelSize);
+      }
+    }
+    if (alpha !== 1) ctx.globalAlpha = 1;
+  }
+
+  // =========================
+  // Tiny audio (8-bit beep)
+  // =========================
+  let audioOn = true;
+  let ac = null;
+  function beep(freq=440, dur=0.06, type="square", gain=0.05) {
+    if (!audioOn) return;
+    try {
+      if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator();
+      const g = ac.createGain();
+      o.type = type;
+      o.frequency.value = freq;
+      g.gain.value = gain;
+      o.connect(g); g.connect(ac.destination);
+      o.start();
+      o.stop(ac.currentTime + dur);
+    } catch {}
+  }
+
+  // =========================
+  // Input
+  // =========================
+  const keys = new Set();
+
+  // Jump feel helpers
+  let jumpBuffer = 0;
+  const JUMP_BUFFER = 0.12;
+  const COYOTE_TIME = 0.10;
+
+  addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    keys.add(k);
+
+    // Jump buffer: bấm sớm vẫn ăn
+    if (k === "z" || e.key === " ") jumpBuffer = JUMP_BUFFER;
+
+    if (["arrowup","arrowdown","arrowleft","arrowright"," ","enter"].includes(e.key)) e.preventDefault();
+    if (k === "m") audioOn = !audioOn;
+  }, {passive:false});
+
+  addEventListener("keyup", (e) => keys.delete(e.key.toLowerCase()));
+
+  const isDown = (k) => keys.has(k);
+
+  // =========================
+  // World / Level
+  // =========================
+  const TS = 16;
+  const SPR = 2;
+  const ROWS = 15;
+  const COLS = 260;
+  const WORLD_W = COLS * TS;
+
+  const tiles = Array.from({length: ROWS}, () => Array.from({length: COLS}, () => "."));
+
+  function setRect(x0,y0,w,h,ch){
+    for(let y=y0;y<y0+h;y++){
+      if(y<0||y>=ROWS) continue;
+      for(let x=x0;x<x0+w;x++){
+        if(x<0||x>=COLS) continue;
+        tiles[y][x]=ch;
+      }
+    }
+  }
+
+  function buildLevel(){
+    for(let x=0;x<COLS;x++){
+      tiles[ROWS-1][x] = "#";
+      if (x%7===0) tiles[ROWS-2][x] = "B";
+    }
+
+    const holes = [
+      [22,3],[48,4],[71,3],[104,5],[138,4],[169,4],[198,5],[226,4]
+    ];
+    for (const [hx,hw] of holes) {
+      for(let x=hx;x<hx+hw;x++){
+        tiles[ROWS-1][x] = ".";
+        tiles[ROWS-2][x] = ".";
+      }
+    }
+
+    const plats = [
+      [12,10,6,1],[30,9,8,1],[41,7,6,1],
+      [58,10,6,1],[63,8,6,1],
+      [82,9,8,1],[92,7,7,1],
+      [115,10,7,1],[124,8,6,1],
+      [146,9,9,1],[157,7,6,1],
+      [178,10,7,1],[187,8,7,1],
+      [210,9,9,1],[220,7,7,1],
+    ];
+    for (const [x,y,w,h] of plats) setRect(x,y,w,h,"P");
+
+    const blocks = [
+      [16,8,3],[34,6,3],[66,6,3],[88,5,3],[128,6,3],[159,5,3],[214,6,3]
+    ];
+    for (const [x,y,w] of blocks) setRect(x,y,w,1,"B");
+
+    const spikeStrips = [
+      [54,ROWS-2,4],[140,ROWS-2,5],[205,ROWS-2,4]
+    ];
+    for (const [sx,sy,sw] of spikeStrips) setRect(sx,sy,sw,1,"X");
+
+    setRect(COLS-8, ROWS-5, 6, 4, "B");
+  }
+  buildLevel();
+
+  function tileAt(tx, ty){
+    if (tx<0||ty<0||tx>=COLS||ty>=ROWS) return "#";
+    return tiles[ty][tx];
+  }
+  function isSolid(ch){
+    return ch==="#" || ch==="B" || ch==="P";
+  }
+
+  // =========================
+  // Entities
+  // =========================
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const rand = (a,b)=>a+Math.random()*(b-a);
+
+  const player = {
+    x: 2*TS, y: 8*TS,
+    w: 16, h: 16,
+    vx: 0, vy: 0,
+    onGround: false,
+    dir: 1,
+    hp: 4, maxHp: 4,
+    inv: 0,
+    speedT: 0,
+    jumpT: 0,
+    score: 0,
+    sesame: 0,
+    coyote: 0,
+  };
+
+  const pickups = [];
+  const enemies = [];
+  const particles = [];
+
+  function spawnPickup(type, x, y){
+    pickups.push({type, x, y, t: rand(0,999), taken:false});
+  }
+  function spawnEnemy(type, x, y){
+    enemies.push({type, x, y, w:16, h:16, vx: (Math.random()<0.5?-1:1)*20, alive:true, hurt:0});
+  }
+
+  for (let i=0;i<24;i++){
+    const px = (10 + i*10 + (i%3)*3) * TS;
+    const py = (6 + (i%4)) * TS;
+    const r = i%6;
+    if (r===0||r===1) spawnPickup("rau", px, py);
+    else if (r===2||r===3) spawnPickup("thit", px, py);
+    else spawnPickup("sot", px, py);
+  }
+  for (let i=0;i<70;i++){
+    const px = (8 + i*3 + (i%5)) * TS;
+    const py = (5 + (i%6)) * TS;
+    if (px < WORLD_W - 10*TS) spawnPickup("sesame", px, py);
+  }
+
+  for (let i=0;i<18;i++){
+    const ex = (18 + i*13) * TS;
+    const ey = (ROWS-2)*TS - 16;
+    spawnEnemy(i%2===0 ? "cat" : "pan", ex, ey);
+  }
+
+  // =========================
+  // Physics / Collision
+  // =========================
+  function aabb(ax,ay,aw,ah,bx,by,bw,bh){
+    return ax<bx+bw && ax+aw>bx && ay<by+bh && ay+ah>by;
+  }
+
+  function firstSolidInAABB(x,y,w,h){
+    const x0 = Math.floor(x/TS), x1 = Math.floor((x+w-1)/TS);
+    const y0 = Math.floor(y/TS), y1 = Math.floor((y+h-1)/TS);
+    for (let ty=y0; ty<=y1; ty++){
+      for (let tx=x0; tx<=x1; tx++){
+        const ch = tileAt(tx,ty);
+        if (isSolid(ch)) return {tx,ty,ch};
+      }
+    }
+    return null;
+  }
+
+  function resolveX(ent, dt){
+    let nx = ent.x + ent.vx*dt;
+    let hit = firstSolidInAABB(nx, ent.y, ent.w, ent.h);
+    let guard = 0;
+    while (hit && guard++<6){
+      if (ent.vx > 0) nx = hit.tx*TS - ent.w;
+      else if (ent.vx < 0) nx = (hit.tx+1)*TS;
+      ent.vx = 0;
+      hit = firstSolidInAABB(nx, ent.y, ent.w, ent.h);
+    }
+    ent.x = nx;
+  }
+
+  function resolveY(ent, dt){
+    ent.onGround = false;
+    let ny = ent.y + ent.vy*dt;
+    let hit = firstSolidInAABB(ent.x, ny, ent.w, ent.h);
+    let guard = 0;
+    while (hit && guard++<6){
+      if (ent.vy > 0){
+        ny = hit.ty*TS - ent.h;
+        ent.vy = 0;
+        ent.onGround = true;
+      } else if (ent.vy < 0){
+        ny = (hit.ty+1)*TS;
+        ent.vy = 0;
+      }
+      hit = firstSolidInAABB(ent.x, ny, ent.w, ent.h);
+    }
+    ent.y = ny;
+  }
+
+  function tileHazardInAABB(x,y,w,h){
+    const x0 = Math.floor(x/TS), x1 = Math.floor((x+w-1)/TS);
+    const y0 = Math.floor(y/TS), y1 = Math.floor((y+h-1)/TS);
+    for (let ty=y0; ty<=y1; ty++){
+      for (let tx=x0; tx<=x1; tx++){
+        if (tileAt(tx,ty)==="X") return true;
+      }
+    }
+    return false;
+  }
+
+  // =========================
+  // FX: particles
+  // =========================
+  function sparkle(x,y, n=10, col="#ffd166"){
+    for(let i=0;i<n;i++){
+      particles.push({
+        x,y,
+        vx: rand(-50,50), vy: rand(-80,-10),
+        life: rand(0.25,0.55),
+        col,
+      });
+    }
+  }
+
+  // =========================
+  // Game State
+  // =========================
+  let state = "title";
+  let camX = 0;
+  let time = 0;
+
+  function resetGame(){
+    player.x = 2*TS; player.y = 8*TS;
+    player.vx=0; player.vy=0;
+    player.hp=player.maxHp;
+    player.inv=0;
+    player.speedT=0; player.jumpT=0;
+    player.score=0; player.sesame=0;
+    player.coyote=0;
+    camX=0;
+    for (const p of pickups) p.taken=false;
+    for (const e of enemies) { e.alive=true; e.hurt=0; }
+    particles.length=0;
+  }
+
+  // =========================
+  // Rendering (kitchen world)
+  // =========================
+  function drawSky(){
+    const g = ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0, "#071a2c");
+    g.addColorStop(0.55, "#0b2a47");
+    g.addColorStop(1, "#08121d");
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+
+    const px = (camX*0.18)|0;
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#0f3a5c";
+    for (let i=0;i<18;i++){
+      const x = ((i*60 - (px%60))|0);
+      const h = 30 + (i%3)*10;
+      ctx.fillRect(x, 38, 40, h);
+      ctx.fillRect(x+8, 38+h, 24, 8);
+    }
+    ctx.globalAlpha = 1;
+
+    const cx = (camX*0.35)|0;
+    for (let i=0;i<10;i++){
+      const x = ((i*70 - (cx%70))|0);
+      const y = 14 + (i%4)*6;
+      drawSteamCloud(x, y, 1 + (i%3)*0.2);
+    }
+  }
+
+  function drawSteamCloud(x,y,s=1){
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = "#d6f2ff";
+    const p = [
+      [0,6,10,6],[8,2,12,8],[18,6,10,6],[26,4,12,8],
+    ];
+    for(const [dx,dy,w,h] of p){
+      ctx.fillRect((x+dx*s)|0, (y+dy*s)|0, (w*s)|0, (h*s)|0);
+    }
+    ctx.restore();
+  }
+
+  function drawTile(ch, x, y){
+    if (ch === "#"){
+      ctx.fillStyle = "#2a1f1a";
+      ctx.fillRect(x,y,TS,TS);
+      ctx.fillStyle = "#3b2b24";
+      ctx.fillRect(x,y,TS,4);
+      ctx.fillStyle = "#5a4338";
+      ctx.fillRect(x+3,y+8,2,2);
+      ctx.fillRect(x+11,y+10,2,2);
+      ctx.fillRect(x+7,y+13,1,1);
+      return;
+    }
+    if (ch === "B"){
+      ctx.fillStyle = "#7b4b2a";
+      ctx.fillRect(x,y,TS,TS);
+      ctx.fillStyle = "#a46a3f";
+      ctx.fillRect(x+1,y+1,TS-2,TS-2);
+      ctx.fillStyle = "#6a3f22";
+      ctx.fillRect(x+2,y+5,TS-4,1);
+      ctx.fillRect(x+2,y+10,TS-4,1);
+      ctx.fillRect(x+7,y+2,1,TS-4);
+      return;
+    }
+    if (ch === "P"){
+      ctx.fillStyle = "#1a2b3a";
+      ctx.fillRect(x,y,TS,TS);
+      ctx.fillStyle = "#e7eef7";
+      ctx.fillRect(x+1,y+9,TS-2,5);
+      ctx.fillStyle = "#c9d6e6";
+      ctx.fillRect(x+2,y+10,TS-4,3);
+      return;
+    }
+    if (ch === "X"){
+      ctx.fillStyle = "#1a2230";
+      ctx.fillRect(x,y,TS,TS);
+      ctx.fillStyle = "#e9f3ff";
+      for (let i=0;i<4;i++){
+        const kx = x + i*4;
+        ctx.fillRect(kx+1,y+10,2,4);
+        ctx.fillRect(kx+0,y+9,4,1);
+      }
+      ctx.fillStyle = "#9bb7d3";
+      ctx.fillRect(x,y+14,TS,2);
+      return;
+    }
+  }
+
+  function drawToaster(x,y){
+    ctx.fillStyle = "#2c2f3a";
+    ctx.fillRect(x,y, 64, 48);
+    ctx.fillStyle = "#eaeaea";
+    ctx.fillRect(x+6,y+8, 52, 30);
+    ctx.fillStyle = "#ffd166";
+    ctx.fillRect(x+10,y+12, 44, 6);
+    ctx.fillStyle = "#9bb7d3";
+    ctx.fillRect(x+10,y+22, 44, 10);
+    ctx.fillStyle = "#e63946";
+    ctx.fillRect(x+46,y+38, 12, 6);
+    ctx.fillStyle = "rgba(255,255,255,.15)";
+    ctx.fillRect(x+6,y+8, 10, 30);
+  }
+
+  function drawWorld(){
+    const viewLeft = camX;
+    const viewRight = camX + W;
+    const tx0 = Math.floor(viewLeft/TS);
+    const tx1 = Math.floor(viewRight/TS)+1;
+
+    ctx.fillStyle = "rgba(0,0,0,0.12)";
+    ctx.fillRect(0, HUD_H + WORLD_H - 28, W, 28);
+
+    for (let ty=0; ty<ROWS; ty++){
+      for (let tx=tx0; tx<=tx1; tx++){
+        const ch = tileAt(tx,ty);
+        if (ch === ".") continue;
+        const sx = (tx*TS - camX)|0;
+        const sy = (HUD_H + ty*TS)|0;
+        drawTile(ch, sx, sy);
+      }
+    }
+
+    const gx = ( (COLS-6)*TS - camX )|0;
+    const gy = (HUD_H + (ROWS-6)*TS)|0;
+    drawToaster(gx, gy);
+  }
+
+  function drawEntityShadow(x,y,w,h){
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = "#000";
+    ctx.fillRect((x+3)|0, (y+h-2)|0, (w-6)|0, 2);
+    ctx.fillRect((x+5)|0, (y+h)|0, (w-10)|0, 2);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawHUD(){
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillRect(0,0,W,HUD_H);
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(0,HUD_H-1,W,1);
+
+    for (let i=0;i<player.maxHp;i++){
+      const x = 10 + i*14;
+      const y = 8;
+      const a = (i < player.hp) ? 1 : 0.18;
+      drawSprite(ctx, heart8x8, x, y, 1, palette, a);
+    }
+
+    ctx.fillStyle = "#e9f3ff";
+    ctx.font = "10px ui-monospace, Menlo, Consolas, monospace";
+    ctx.fillText(`SCORE ${player.score.toString().padStart(5,"0")}`, 90, 18);
+    drawSprite(ctx, sesame8x8, 200, 7, 1, palette, 1);
+    ctx.fillText(`x ${player.sesame}`, 214, 18);
+
+    let bx = 290;
+    if (player.speedT > 0){
+      drawSprite(ctx, toppingRau8x8, bx, 6, 1, palette);
+      ctx.fillStyle = "#6ee07a";
+      ctx.fillText(`${Math.ceil(player.speedT)}s`, bx+12, 18);
+      bx += 44;
+    }
+    if (player.jumpT > 0){
+      drawSprite(ctx, toppingThit8x8, bx, 6, 1, palette);
+      ctx.fillStyle = "#ffb3b3";
+      ctx.fillText(`${Math.ceil(player.jumpT)}s`, bx+12, 18);
+      bx += 44;
+    }
+
+    ctx.fillStyle = "rgba(233,243,255,.75)";
+    ctx.fillText(audioOn ? "M:ON" : "M:OFF", W-46, 18);
+  }
+
+  // =========================
+  // Gameplay update
+  // =========================
+  function hurtPlayer(){
+    if (player.inv > 0) return;
+    player.hp -= 1;
+    player.inv = 1.1;
+    player.vy = -160;
+    player.vx = -player.dir * 110;
+    sparkle(player.x + 8, player.y + 8, 14, "#ff4d6d");
+    beep(140, 0.08, "square", 0.06);
+    if (player.hp <= 0){
+      state = "over";
+      beep(90, 0.18, "sawtooth", 0.05);
+    }
+  }
+
+  function applyPickup(p){
+    if (p.type === "rau"){
+      player.speedT = Math.max(player.speedT, 8);
+      player.score += 120;
+      sparkle(p.x+8,p.y+8,12,"#6ee07a");
+      beep(660,0.06,"square",0.05);
+    } else if (p.type === "thit"){
+      player.jumpT = Math.max(player.jumpT, 8);
+      player.score += 120;
+      sparkle(p.x+8,p.y+8,12,"#ffb3b3");
+      beep(520,0.06,"square",0.05);
+    } else if (p.type === "sot"){
+      player.hp = Math.min(player.maxHp, player.hp + 1);
+      player.score += 90;
+      sparkle(p.x+8,p.y+8,12,"#e63946");
+      beep(740,0.06,"triangle",0.05);
+    } else if (p.type === "sesame"){
+      player.sesame += 1;
+      player.score += 10;
+      sparkle(p.x+8,p.y+8,6,"#ffd166");
+      beep(880,0.03,"square",0.03);
+    }
+  }
+
+  function updatePlayer(dt){
+    const baseSpeed = 92;
+    const speedMul = (player.speedT > 0) ? 1.5 : 1.0;
+    const maxSpeed = baseSpeed * speedMul;
+
+    // Tuning nhảy: muốn cao hơn nữa tăng lên 300
+    const jumpBase = 285;
+    const jumpMul = (player.jumpT > 0) ? 1.25 : 1.0;
+    const jumpV = jumpBase * jumpMul;
+
+    const left = isDown("arrowleft") || isDown("a");
+    const right = isDown("arrowright") || isDown("d");
+    const jumpHeld = isDown("z") || isDown(" ");
+
+    // buffer giảm dần
+    jumpBuffer = Math.max(0, jumpBuffer - dt);
+
+    // coyote time
+    if (player.onGround) player.coyote = COYOTE_TIME;
+    else player.coyote = Math.max(0, player.coyote - dt);
+
+    const accel = 650;
+    const friction = player.onGround ? 850 : 520;
+
+    if (left)  { player.vx -= accel*dt; player.dir = -1; }
+    if (right) { player.vx += accel*dt; player.dir =  1; }
+    if (!left && !right){
+      const s = Math.sign(player.vx);
+      const v = Math.abs(player.vx);
+      const nv = Math.max(0, v - friction*dt);
+      player.vx = nv*s;
+    }
+
+    player.vx = clamp(player.vx, -maxSpeed, maxSpeed);
+
+    // Jump: buffer + coyote
+    if (jumpBuffer > 0 && (player.onGround || player.coyote > 0)) {
+      player.vy = -jumpV;
+      player.onGround = false;
+      player.coyote = 0;
+      jumpBuffer = 0;
+      beep(440,0.05,"square",0.05);
+      sparkle(player.x+8, player.y+16, 6, "#d6f2ff");
+    }
+
+    // Variable jump: thả phím sớm cắt lực
+    if (!jumpHeld && player.vy < 0) {
+      player.vy *= 0.72;
+    }
+
+    // gravity
+    const g = 560;
+    player.vy += g*dt;
+    player.vy = clamp(player.vy, -520, 560);
+
+    resolveX(player, dt);
+    resolveY(player, dt);
+
+    if (player.y > WORLD_H + 80){
+      hurtPlayer();
+      player.y = 4*TS;
+      player.vy = 0;
+    }
+
+    if (tileHazardInAABB(player.x, player.y + player.h - 4, player.w, 6)){
+      hurtPlayer();
+    }
+
+    if (player.inv > 0) player.inv = Math.max(0, player.inv - dt);
+    if (player.speedT > 0) player.speedT = Math.max(0, player.speedT - dt);
+    if (player.jumpT > 0) player.jumpT = Math.max(0, player.jumpT - dt);
+  }
+
+  function updatePickups(dt){
+    for (const p of pickups){
+      if (p.taken) continue;
+      p.t += dt;
+      const bob = Math.sin(p.t*2.8)*1.4;
+      const px = p.x, py = p.y + bob;
+      if (aabb(player.x, player.y, player.w, player.h, px, py, 16, 16)){
+        p.taken = true;
+        applyPickup(p);
+      }
+    }
+  }
+
+  function updateEnemies(dt){
+    for (const e of enemies){
+      if (!e.alive) continue;
+
+      e.x += e.vx*dt;
+      const hit = firstSolidInAABB(e.x, e.y, e.w, e.h);
+      if (hit){
+        if (e.vx>0) e.x = hit.tx*TS - e.w;
+        else e.x = (hit.tx+1)*TS;
+        e.vx *= -1;
+      }
+
+      e._vy = (e._vy ?? 0) + 560*dt;
+      e._vy = clamp(e._vy, -400, 560);
+      e.y += e._vy*dt;
+      const hitY = firstSolidInAABB(e.x, e.y, e.w, e.h);
+      if (hitY && e._vy>0){
+        e.y = hitY.ty*TS - e.h;
+        e._vy = 0;
+      }
+
+      if (player.hp > 0 && aabb(player.x, player.y, player.w, player.h, e.x, e.y, e.w, e.h)){
+        const stomp = (player.vy > 40) && (player.y + player.h - 2 < e.y + 6);
+        if (stomp){
+          e.alive = false;
+          player.vy = -170;
+          player.score += 80;
+          sparkle(e.x+8, e.y+8, 14, "#ffd166");
+          beep(320,0.06,"square",0.05);
+        } else {
+          hurtPlayer();
+        }
+      }
+    }
+  }
+
+  function updateParticles(dt){
+    for (let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.life -= dt;
+      p.vy += 360*dt;
+      p.x += p.vx*dt;
+      p.y += p.vy*dt;
+      if (p.life <= 0) particles.splice(i,1);
+    }
+  }
+
+  // =========================
+  // Render entities
+  // =========================
+  function drawPickups(){
+    for (const p of pickups){
+      if (p.taken) continue;
+      const bob = Math.sin(p.t*2.8)*1.4;
+      const sx = (p.x - camX)|0;
+      const sy = (HUD_H + p.y + bob)|0;
+      if (p.type === "rau") drawSprite(ctx, toppingRau8x8, sx, sy, SPR, palette);
+      else if (p.type === "thit") drawSprite(ctx, toppingThit8x8, sx, sy, SPR, palette);
+      else if (p.type === "sot") drawSprite(ctx, toppingSot8x8, sx, sy, SPR, palette);
+      else if (p.type === "sesame") drawSprite(ctx, sesame8x8, sx+4, sy+4, 1, palette);
+    }
+  }
+
+  function drawEnemies(){
+    for (const e of enemies){
+      if (!e.alive) continue;
+      const sx = (e.x - camX)|0;
+      const sy = (HUD_H + e.y)|0;
+      drawEntityShadow(sx, sy, 16, 16);
+      if (e.type === "cat"){
+        drawSprite(ctx, cat8x8, sx, sy, SPR, palette);
+      } else {
+        drawSprite(ctx, pan8x8, sx, sy, SPR, palette);
+        const gl = ((time*8)|0)%8;
+        ctx.fillStyle = "rgba(255,255,255,0.18)";
+        ctx.fillRect(sx+gl*2, sy+2, 2, 14);
+      }
+    }
+  }
+
+  function drawPlayer(){
+    const sx = (player.x - camX)|0;
+    const sy = (HUD_H + player.y)|0;
+
+    drawEntityShadow(sx, sy, 16, 16);
+
+    const moving = Math.abs(player.vx) > 12 && player.onGround;
+    const frame = moving ? (((time*10)|0)%2 ? banhMiRun1 : banhMiRun2) : banhMi8x8;
+
+    const a = (player.inv>0 && ((time*18)|0)%2===0) ? 0.3 : 1;
+
+    if (player.speedT>0 && moving){
+      drawSprite(ctx, frame, sx - 10, sy, SPR, palette, 0.25);
+      drawSprite(ctx, frame, sx - 18, sy, SPR, palette, 0.16);
+    }
+
+    drawSprite(ctx, frame, sx, sy, SPR, palette, a);
+
+    if (player.jumpT>0 || player.speedT>0){
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = "#ff4d6d";
+      ctx.fillRect(sx+4, sy+10, 2, 2);
+      ctx.fillRect(sx+10, sy+10, 2, 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawParticles(){
+    for (const p of particles){
+      const sx = (p.x - camX)|0;
+      const sy = (HUD_H + p.y)|0;
+      ctx.globalAlpha = clamp(p.life*2, 0, 1);
+      ctx.fillStyle = p.col;
+      ctx.fillRect(sx, sy, 2, 2);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawOverlayCard(title, lines){
+    ctx.fillStyle = "rgba(0,0,0,0.52)";
+    ctx.fillRect(0,0,W,H);
+
+    const cw = 330, ch = 150;
+    const cx = (W-cw)/2, cy = (H-ch)/2;
+    ctx.fillStyle = "rgba(14,25,38,0.92)";
+    ctx.fillRect(cx, cy, cw, ch);
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.strokeRect(cx+0.5, cy+0.5, cw-1, ch-1);
+
+    ctx.fillStyle = "#e9f3ff";
+    ctx.font = "bold 14px ui-monospace, Menlo, Consolas, monospace";
+    ctx.fillText(title, cx+16, cy+28);
+
+    ctx.font = "11px ui-monospace, Menlo, Consolas, monospace";
+    ctx.fillStyle = "rgba(233,243,255,0.88)";
+    let y = cy+52;
+    for(const s of lines){
+      ctx.fillText(s, cx+16, y);
+      y += 16;
+    }
+
+    drawSprite(ctx, banhMi8x8, cx+cw-58, cy+20, 3, palette);
+    drawSprite(ctx, toppingRau8x8, cx+cw-56, cy+62, 2, palette);
+    drawSprite(ctx, toppingThit8x8, cx+cw-32, cy+62, 2, palette);
+    drawSprite(ctx, toppingSot8x8,  cx+cw-44, cy+88, 2, palette);
+  }
+
+  // =========================
+  // Main Loop
+  // =========================
+  let last = performance.now();
+
+  function tick(now){
+    const dt = clamp((now-last)/1000, 0, 1/20);
+    last = now;
+    time += dt;
+
+    if (state === "title"){
+      if (isDown("enter")){
+        resetGame();
+        state = "play";
+        beep(520,0.06,"square",0.05);
+      }
+    } else if (state === "play"){
+      updatePlayer(dt);
+      updatePickups(dt);
+      updateEnemies(dt);
+      updateParticles(dt);
+
+      camX = clamp(player.x - W*0.45, 0, WORLD_W - W);
+
+      const goalX = (COLS-7)*TS;
+      if (player.x > goalX){
+        state = "win";
+        beep(880,0.10,"triangle",0.05);
+        beep(988,0.12,"triangle",0.05);
+      }
+    } else if (state === "over" || state === "win"){
+      if (isDown("enter")){
+        state = "title";
+        beep(440,0.06,"square",0.05);
+      }
+    }
+
+    drawSky();
+    drawWorld();
+    drawPickups();
+    drawEnemies();
+    drawParticles();
+    drawPlayer();
+    drawHUD();
+
+    if (state === "title"){
+      drawOverlayCard("BÁNH MÌ ADVENTURE", [
+        "Enter: Bắt đầu",
+        "← →: Di chuyển | Z/Space: Nhảy",
+        "🥬 +Tốc độ | 🥩 +Nhảy cao | 🧴 +Máu",
+        "M: Bật/Tắt âm",
+        "Mục tiêu: chạy tới lò nướng (toaster)!",
+      ]);
+    } else if (state === "over"){
+      drawOverlayCard("BỊ... NƯỚNG CHÁY 😵‍💫", [
+        "Enter: Chơi lại",
+        `Điểm: ${player.score} | Mè: ${player.sesame}`,
+        "Tip: Né dao (spike) và đừng ôm chảo!",
+      ]);
+    } else if (state === "win"){
+      drawOverlayCard("THOÁT KHỎI BẾP! 🥖✨", [
+        "Enter: Về màn hình",
+        `Điểm: ${player.score} | Mè: ${player.sesame}`,
+        "Bạn đã trở thành huyền thoại bánh mì!",
+      ]);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

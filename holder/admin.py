@@ -8,6 +8,7 @@ class HolderAdmin(admin.ModelAdmin):
     # Các cột hiển thị trong danh sách Holder
     list_display = (
         "ma_noi_bo",
+        "rfid", 
         "ten_thiet_bi",
         "nhom_thiet_bi",
         "loai_holder",
@@ -32,6 +33,7 @@ class HolderAdmin(admin.ModelAdmin):
     # Cho phép tìm kiếm
     search_fields = (
         "ma_noi_bo",
+        "rfid",  
         "ten_thiet_bi",
         "ma_nha_sx",
         "nha_san_xuat",
@@ -54,6 +56,7 @@ class HolderAdmin(admin.ModelAdmin):
                 "ten_thiet_bi",
                 "nhom_thiet_bi",
                 "ma_noi_bo",
+                "rfid", 
                 "ma_nha_sx",
                 "loai_holder",
                 "so_serial",

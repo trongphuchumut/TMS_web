@@ -48,8 +48,7 @@
   }
 
   .hr-input,
-  .hr-textarea,
-  .hr-select {
+  .hr-textarea {
       width: 100%;
       padding: 10px 12px;
       border-radius: 12px;
@@ -71,6 +70,12 @@
 
   .hr-row-full {
       grid-column: 1 / -1;
+  }
+
+  .hr-help {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 6px;
   }
 
   .hr-submit {
@@ -103,13 +108,14 @@
 
       <div class="hr-title">Phiếu trả holder</div>
       <div class="hr-sub">
-          Ghi nhận việc trả holder về kho. Hệ thống sẽ tính thời gian mượn và mức độ mòn.
+          Ghi nhận việc trả holder về kho. Mức độ mòn được nhập thủ công bởi người vận hành
+          (hệ thống không tự động tính).
       </div>
 
       <!-- THÔNG TIN HOLDER -->
       <div class="hr-info-box">
           <strong>{{ holder.ma_noi_bo }} — {{ holder.ten_thiet_bi }}</strong><br>
-          Trạng thái hiện tại: 
+          Trạng thái hiện tại:
           <strong>{{ holder.get_trang_thai_tai_san_display }}</strong><br>
           Mòn hiện tại:
           <strong>{{ holder.mon|default:"0" }}%</strong>
@@ -123,7 +129,18 @@
               <div>
                   <label class="hr-label">Người trả</label>
                   <input class="hr-input" type="text"
-                         value="{{ request.user.get_full_name|default:request.user.username }}" readonly>
+                         value="{{ request.user.get_full_name|default:request.user.username }}"
+                         readonly>
+              </div>
+
+              <div>
+                  <label class="hr-label">Mòn sau khi trả (%)</label>
+                  <input class="hr-input" type="number"
+                         name="mon_sau" min="0" max="100"
+                         placeholder="VD: 85 (để trống nếu không đổi)">
+                  <div class="hr-help">
+                      Nhập theo đánh giá thực tế hoặc catalog. Để trống nếu giữ nguyên.
+                  </div>
               </div>
 
               <div class="hr-row-full">
@@ -134,7 +151,9 @@
 
           </div>
 
-          <button type="submit" class="hr-submit">Xác nhận trả holder</button>
+          <button type="submit" class="hr-submit">
+              Xác nhận trả holder
+          </button>
 
       </form>
 

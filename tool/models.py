@@ -173,15 +173,17 @@ class Tool(models.Model):
     )
 
     tu = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Tủ / Kệ"
+    max_length=1,
+    blank=True,
+    verbose_name="Tủ (A/B/...)"
     )
-    ngan = models.CharField(
-        max_length=100,
-        blank=True,
-        verbose_name="Ngăn / Khay"
+
+    ngan = models.PositiveSmallIntegerField(
+    null=True,
+    blank=True,
+    verbose_name="Ngăn (số)"
     )
+
     may_uu_tien = models.CharField(
         max_length=100,
         blank=True,

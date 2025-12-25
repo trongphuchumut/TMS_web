@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.core.validators import RegexValidator
 class Holder(models.Model):
     # THÔNG TIN CHUNG
     ten_thiet_bi = models.CharField(max_length=200)
@@ -8,6 +8,20 @@ class Holder(models.Model):
     ma_nha_sx = models.CharField(max_length=100)
     loai_holder = models.CharField(max_length=100, blank=True, null=True)
     so_serial = models.CharField(max_length=100, blank=True, null=True)
+    rfid = models.CharField(
+    max_length=32,
+    unique=True,
+    blank=True,
+    null=True,
+    db_index=True,
+    validators=[
+        RegexValidator(
+            regex=r"^[0-9A-Fa-f]+$",
+            message="RFID chỉ gồm ký tự HEX (0-9, A-F).",
+        )
+    ],
+    help_text="Mã RFID của holder (UID tag), ví dụ: A1B2C3D4",
+)
 
     nha_san_xuat = models.CharField(max_length=100, blank=True, null=True)
     nha_cung_cap = models.CharField(max_length=150, blank=True, null=True)

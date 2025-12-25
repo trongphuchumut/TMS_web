@@ -27,11 +27,24 @@
       background: var(--blue-soft);
       border-radius: 16px;
       padding: 12px 16px;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
       border: 1px solid rgba(56,189,248,0.4);
       color: var(--blue-strong);
       font-size: 14px;
   }
+
+  /* Messages */
+  .msg-wrap{margin: 0 0 14px 0; display:flex; flex-direction:column; gap:10px;}
+  .msg{
+    border-radius: 16px;
+    padding: 10px 12px;
+    font-size: 14px;
+    border: 1px solid transparent;
+  }
+  .msg.error{ background:#fff1f2; border-color:#fecdd3; color:#9f1239;}
+  .msg.success{ background:#ecfeff; border-color:#a5f3fc; color:#155e75;}
+  .msg.info{ background:#eff6ff; border-color:#bfdbfe; color:#1e3a8a;}
+
   .row { margin-bottom: 16px; }
   .label {
       font-size: 13px;
@@ -40,6 +53,22 @@
       margin-bottom: 6px;
       display: block;
   }
+  .hint {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 6px;
+  }
+  .warn {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 13px;
+      display: none;
+  }
+
   .input, .select, .textarea {
       width: 100%;
       padding: 10px 12px;
@@ -77,6 +106,12 @@
       background: #0ea5e9;
       transform: translateY(-2px);
   }
+  .submit[disabled]{
+      opacity:.55;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+  }
 </style>
 {% endblock %}
 
@@ -89,45 +124,64 @@
     <!-- Thông tin tool -->
     <div class="info-box">
       <strong>Tool:</strong> {{ tool.ma_tool }} — {{ tool.ten_tool }}<br>
-      <strong>Tồn kho hiện tại:</strong> {{ tool.ton_kho }}
+      <strong>Tồn kho hiện tại:</strong> <span id="tonKhoText">{{ tool.ton_kho }}</span>
     </div>
 
-    <form method="post">
+    <!-- ✅ Hiển thị messages từ backend -->
+    {% if messages %}
+      <div class="msg-wrap">
+        {% for message in messages %}
+          <div class="msg {% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" id="toolTxForm">
       {% csrf_token %}
 
       <!-- Loại giao dịch -->
       <div class="row">
         <label class="label">Loại giao dịch *</label>
-        <select name="loai" class="select" required>
+        <select name="loai" class="select" id="loaiSelect" required>
           <option value="">— Chọn loại giao dịch —</option>
           {% for value, label in loai_choices %}
             <option value="{{ value }}">{{ label }}</option>
           {% endfor %}
         </select>
+        <div class="hint" id="loaiHint">Chọn “Xuất/Mượn” để lấy tool ra khỏi kho, hoặc “Nhập/Trả” để hoàn kho.</div>
       </div>
 
       <!-- Số lượng -->
       <div class="row">
         <label class="label">Số lượng *</label>
-        <input type="number" min="1" name="so_luong"
-               class="input" required placeholder="Nhập số lượng…">
+        <input
+          type="number"
+          min="1"
+          name="so_luong"
+          class="input"
+          id="qtyInput"
+          required
+          placeholder="Nhập số lượng…"
+        >
+        <div class="hint" id="qtyHint">Khi chọn xuất, số lượng không được vượt tồn kho.</div>
+        <div class="warn" id="qtyWarn"></div>
       </div>
 
       <!-- Mã dự án (optional) -->
       <div class="row">
         <label class="label">Mã dự án (tùy chọn)</label>
-        <input type="text" name="ma_du_an" class="input"
-               placeholder="VD: PJ-001…">
+        <input type="text" name="ma_du_an" class="input" placeholder="VD: PJ-001…">
       </div>
 
       <!-- Ghi chú (optional) -->
       <div class="row">
         <label class="label">Ghi chú</label>
-        <textarea name="ghi_chu" class="textarea"
-                  placeholder="Ghi chú thêm…"></textarea>
+        <textarea name="ghi_chu" class="textarea" placeholder="Ghi chú thêm…"></textarea>
       </div>
 
-      <button type="submit" class="submit">
+      <button type="submit" class="submit" id="submitBtn">
         Lưu giao dịch
       </button>
 
@@ -135,13 +189,64 @@
 
   </div>
 </div>
+
 <script>
-    console.log("DEBUG TOOL:", {
-        id: "{{ tool.id }}",
-        ma_tool: "{{ tool.ma_tool }}",
-        ten_tool: "{{ tool.ten_tool }}",
-        ton_kho: "{{ tool.ton_kho }}",
-    });
+  // ====== Frontend guard (chỉ để nhắc, backend vẫn quyết định) ======
+  const TOOL = {
+    id: "{{ tool.id }}",
+    ma_tool: "{{ tool.ma_tool }}",
+    ten_tool: "{{ tool.ten_tool }}",
+    ton_kho: Number("{{ tool.ton_kho|default:'0' }}"),
+  };
+
+  const EXPORT_CODE = "{{ ToolTransaction.EXPORT|default:'' }}"; // nếu bạn không pass được, JS sẽ fallback theo text
+  const loaiSelect = document.getElementById("loaiSelect");
+  const qtyInput = document.getElementById("qtyInput");
+  const qtyWarn = document.getElementById("qtyWarn");
+  const submitBtn = document.getElementById("submitBtn");
+
+  function isExportSelected() {
+    const v = (loaiSelect.value || "").toUpperCase();
+    // ưu tiên so sánh code nếu bạn có, còn không thì check theo chuỗi phổ biến
+    if (EXPORT_CODE && v === String(EXPORT_CODE).toUpperCase()) return true;
+    return v.includes("EXPORT") || v.includes("XUAT") || v.includes("MUON") || v.includes("BORROW");
+  }
+
+  function validateQty() {
+    const qty = Number(qtyInput.value || 0);
+    const isExport = isExportSelected();
+
+    // Set max gợi ý
+    if (isExport) {
+      qtyInput.max = String(TOOL.ton_kho);
+    } else {
+      qtyInput.removeAttribute("max");
+    }
+
+    // Warn + disable submit
+    if (isExport && qty > TOOL.ton_kho) {
+      qtyWarn.style.display = "block";
+      qtyWarn.textContent = `Số lượng xuất (${qty}) đang vượt tồn kho (${TOOL.ton_kho}). Vui lòng giảm số lượng.`;
+      submitBtn.disabled = true;
+      return false;
+    }
+
+    qtyWarn.style.display = "none";
+    qtyWarn.textContent = "";
+    submitBtn.disabled = false;
+    return true;
+  }
+
+  loaiSelect.addEventListener("change", validateQty);
+  qtyInput.addEventListener("input", validateQty);
+
+  document.getElementById("toolTxForm").addEventListener("submit", function(e){
+    if (!validateQty()) {
+      e.preventDefault();
+    }
+  });
+
+  console.log("DEBUG TOOL:", TOOL);
 </script>
 
 {% endblock %}
