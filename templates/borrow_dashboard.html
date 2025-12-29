@@ -268,60 +268,64 @@
 
         <div class="bp-table-wrapper">
             <table class="bp-table">
-                <thead>
-                <tr>
-                    <th>Mã</th>
-                    <th>Tên holder</th>
-                    <th>Nhóm</th>
-                    <th>Độ bền</th>
-                    <th>Trạng thái</th>
-                    <th>Thao tác</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for holder in holders %}
-                    <tr>
-                        <td>{{ holder.ma_noi_bo }}</td>
-                        <td>{{ holder.ten_thiet_bi }}</td>
-                        <td>{{ holder.nhom_thiet_bi }}</td>
-                             <!-- 👉 HIỂN THỊ ĐỘ BỀN HIỆN TẠI TỪ HOLDER.MON -->
-                    <td>
-                        {% if holder.mon is not None %}
-                            <span class="bp-badge">
-                                {{ holder.mon }}%
-                            </span>
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                        <td>{{ holder.get_trang_thai_tai_san_display }}</td>
-                    
-                        <td>
-                            {% if holder.trang_thai_tai_san == "dang_su_dung" %}
-                                {# Chỉ hiện nút mượn khi đang sẵn sàng #}
-                                <a href="{% url 'holder_muontra:borrow_for_holder' holder.id %}" class="btn-small">
-                                    ➕ Mượn tool
-                                </a>
-                            {% else %}
-                                {# Các trạng thái khác: chỉ hiện nút trả / đóng #}
-                                <a href="{% url 'holder_muontra:return_for_holder' holder.id %}"
-                                class="btn-small neutral">
-                                    ↩️ Trả / đóng
-                                </a>
-                            {% endif %}
-</td>
-         <td>
-                        <span class="bp-badge">
-                            {{ holder.danh_gia_gan_nhat|default:"-" }}
-                        </span>
-                    </td>
-                    </tr>
-                {% empty %}
-                    <tr>
-                        <td colspan="5">Chưa có holder nào.</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
+           <thead>
+<tr>
+  <th>Mã</th>
+  <th>Tên holder</th>
+  <th>Nhóm</th>
+  <th>Độ bền</th>
+  <th>Trạng thái</th>
+  <th>Thao tác</th>
+  <th>Đánh giá</th>
+</tr>
+</thead>
+
+<tbody>
+{% for holder in holders %}
+  <tr>
+    <td>{{ holder.ma_noi_bo }}</td>
+    <td>{{ holder.ten_thiet_bi }}</td>
+    <td>{{ holder.nhom_thiet_bi }}</td>
+
+    <td>
+      {% if holder.mon is not None %}
+        <span class="bp-badge">{{ holder.mon }}%</span>
+      {% else %}
+        —
+      {% endif %}
+    </td>
+
+    <td>
+      <span class="bp-badge">{{ holder.get_trang_thai_tai_san_display }}</span>
+    </td>
+
+    <td>
+      {% if holder.trang_thai_tai_san == "san_sang" %}
+        <a href="{% url 'holder_muontra:borrow_for_holder' holder.id %}" class="btn-small">
+          ➕ Mượn
+        </a>
+
+      {% elif holder.trang_thai_tai_san == "dang_duoc_muon" %}
+        <a href="{% url 'holder_muontra:return_for_holder' holder.id %}" class="btn-small neutral">
+          ↩️ Trả / đóng
+        </a>
+
+      {% else %}
+        <span class="bp-badge">—</span>
+      {% endif %}
+    </td>
+
+    <td>
+      <span class="bp-badge">{{ holder.danh_gia_gan_nhat|default:"-" }}</span>
+    </td>
+  </tr>
+{% empty %}
+  <tr>
+    <td colspan="7">Chưa có holder nào.</td>
+  </tr>
+{% endfor %}
+</tbody>
+
             </table>
         </div>
     </div>

@@ -1,21 +1,20 @@
+# holder_muontra/views_api.py  (hoặc file bạn đang để api_check_*)
+
 from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.http import require_GET
+
 from .models import HolderHistory
 
 MQTT_TX_TIMEOUT_SECONDS = getattr(settings, "MQTT_TX_TIMEOUT_SECONDS", 60)
-
-# ✅ theo model Holder hiện tại của ông:
-HOLDER_FREE = "dang_su_dung"       # label: Đang sẵn sàng (đang đặt tên ngược)
-HOLDER_BUSY = "dang_duoc_muon"     # label: Đang được mượn
 
 
 def _timeout_if_pending(h: HolderHistory) -> None:
     """Nếu PENDING quá lâu => FAILED (timeout)."""
     if h.trang_thai != "PENDING":
         return
-    start_time = h.thoi_gian_muon or h.created_at
+    start_time = h.thoi_gian_muon or getattr(h, "created_at", None)
     if not start_time:
         return
     age_sec = (timezone.now() - start_time).total_seconds()
@@ -25,20 +24,19 @@ def _timeout_if_pending(h: HolderHistory) -> None:
         h.save(update_fields=["trang_thai", "ly_do_fail"])
 
 
-
 @require_GET
 def api_check_borrow_tx(request, tx_id):
     """
     API check giao dịch MƯỢN.
     Worker MQTT sẽ:
-      - PENDING -> DANG_MUON
-      - holder -> dang_duoc_muon
-    API chỉ có nhiệm vụ: timeout + trả status.
+      - phiếu mượn: PENDING -> DANG_MUON (hoặc FAILED)
+      - holder: san_sang -> dang_duoc_muon
+    API chỉ: timeout + trả status.
     """
     try:
         h = HolderHistory.objects.get(tx_id=tx_id)
     except HolderHistory.DoesNotExist:
-        return JsonResponse({"status": "UNKNOWN"})
+        return JsonResponse({"status": "UNKNOWN", "reason": "tx_not_found"})
 
     _timeout_if_pending(h)
 
@@ -53,15 +51,15 @@ def api_check_return_tx(request, tx_id):
     """
     API check giao dịch TRẢ.
     Worker MQTT sẽ:
-      - phiếu trả: PENDING -> SUCCESS
+      - phiếu trả: PENDING -> SUCCESS (hoặc FAILED)
       - phiếu mượn đang mở: DANG_MUON -> DA_TRA
-      - holder -> dang_su_dung
+      - holder: dang_duoc_muon -> san_sang
     API chỉ: timeout + trả status.
     """
     try:
         h = HolderHistory.objects.get(tx_id=tx_id)
     except HolderHistory.DoesNotExist:
-        return JsonResponse({"status": "UNKNOWN"})
+        return JsonResponse({"status": "UNKNOWN", "reason": "tx_not_found"})
 
     _timeout_if_pending(h)
 

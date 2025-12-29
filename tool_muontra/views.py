@@ -14,6 +14,16 @@ from iot_gateway.mqtt import send_tool_borrow, send_tool_return
 from tool.models import Tool
 from .models import ToolTransaction
 
+# ===================== CONFIG =====================
+DEBUG_RFID = True  # bật log để soi RFID
+
+# SỬA IMPORT NÀY cho đúng app/model UserProfile của bạn
+# Ví dụ: from users.models import UserProfile
+try:
+    from accounts.models import UserProfile  # <-- đổi đúng chỗ bạn đang đặt UserProfile
+except Exception:
+    UserProfile = None
+
 
 # =========================================================
 # Helpers
@@ -32,6 +42,53 @@ def normalize_locker_cell(locker, cell):
     # fallback
     locker = (locker or "B")
     return locker, int(cell)
+
+
+def _clean_rfid(x: str | None) -> str:
+    if not x:
+        return ""
+    return str(x).replace(":", "").strip().upper()
+
+
+def _get_user_rfid_from_profile(request) -> str:
+    """
+    Lấy RFID theo user đang login từ DB UserProfile.
+    Trả về "" nếu không có.
+    """
+    if not request.user.is_authenticated:
+        return ""
+
+    # Cách 1: query model UserProfile (nếu import được)
+    if UserProfile is not None:
+        try:
+            p = UserProfile.objects.filter(user=request.user).only("rfid_code").first()
+            return _clean_rfid(getattr(p, "rfid_code", "") if p else "")
+        except Exception:
+            pass
+
+    # Cách 2: thử OneToOne related_name phổ biến
+    for attr in ("userprofile", "profile"):
+        p = getattr(request.user, attr, None)
+        if p is not None:
+            return _clean_rfid(getattr(p, "rfid_code", "") or getattr(p, "rfid", "") or "")
+
+    return ""
+
+
+def _resolve_user_rfid(request) -> tuple[str, str]:
+    """
+    1) DB profile (đăng nhập)
+    2) POST form (kiosk/manual)
+    """
+    rfid_db = _get_user_rfid_from_profile(request)
+    if rfid_db:
+        return (rfid_db, "DB_PROFILE")
+
+    rfid_post = _clean_rfid(request.POST.get("user_rfid"))
+    if rfid_post:
+        return (rfid_post, "POST_FORM")
+
+    return ("", "MISSING")
 
 
 # =========================================================
@@ -78,8 +135,10 @@ def tool_transaction_create(request, tool_id):
 
     FIX: Chặn xuất vượt tồn (ví dụ tồn 13 mà nhập 14).
          Đồng thời lock Tool row để tránh 2 người bấm cùng lúc.
+
+    FIX RFID: ưu tiên lấy RFID từ UserProfile (DB), nếu không có thì lấy từ POST.
+             Không còn fallback U000 âm thầm.
     """
-    # GET vẫn cần tool để render form
     tool = get_object_or_404(Tool, pk=tool_id)
 
     if request.method == "POST":
@@ -87,7 +146,16 @@ def tool_transaction_create(request, tool_id):
         so_luong_raw = request.POST.get("so_luong")
         ma_du_an = request.POST.get("ma_du_an", "").strip()
         ghi_chu = request.POST.get("ghi_chu", "").strip()
-        user_rfid = request.POST.get("user_rfid", "U000").strip()
+
+        # ✅ resolve RFID đúng nguồn
+        user_rfid, rfid_src = _resolve_user_rfid(request)
+        if DEBUG_RFID:
+            print("[TOOL_TX] POST keys:", list(request.POST.keys()))
+            print("[TOOL_TX] user_rfid =", user_rfid, "source =", rfid_src)
+
+        if not user_rfid:
+            messages.error(request, "Chưa nhận được RFID người dùng (DB/Profile hoặc Form).")
+            return redirect(request.path)
 
         # Validate số lượng
         try:
@@ -100,15 +168,10 @@ def tool_transaction_create(request, tool_id):
             messages.error(request, "Số lượng phải > 0.")
             return redirect(request.path)
 
-        # ======= ATOMIC + LOCK để tránh race condition =======
         with transaction.atomic():
-            # lock row tool để mọi check tồn kho là “đúng tại thời điểm tạo đơn”
             tool = Tool.objects.select_for_update().get(pk=tool_id)
-
-            # TON TRƯỚC = tồn kho hiện tại
             ton_truoc = tool.ton_kho
 
-            # ✅ CHẶN XUẤT VƯỢT TỒN (đây là fix bạn cần)
             if loai == ToolTransaction.EXPORT and so_luong > ton_truoc:
                 messages.error(
                     request,
@@ -116,27 +179,21 @@ def tool_transaction_create(request, tool_id):
                 )
                 return redirect(request.path)
 
-            # TON SAU = chưa biết (chỉ cập nhật sau khi SUCCESS)
             ton_sau = ton_truoc
-
-            # 1) Generate TX ID cho MQTT
             tx_id = random.randint(1, 999_999_999)
 
-            # 2) Tạo transaction dạng PENDING
             tran = ToolTransaction.objects.create(
                 loai=loai,
                 tool=tool,
                 so_luong=so_luong,
                 ton_truoc=ton_truoc,
-                ton_sau=ton_sau,  # cập nhật sau khi SUCCESS
+                ton_sau=ton_sau,
                 ma_du_an=ma_du_an,
                 ghi_chu=ghi_chu,
                 nguoi_thuc_hien=request.user if request.user.is_authenticated else None,
                 trang_thai="PENDING",
                 tx_id=tx_id,
             )
-
-        # ======= Hết atomic: gửi MQTT ở ngoài để tránh giữ lock quá lâu =======
 
         locker_raw = getattr(tool, "tu", None)
         cell_raw = getattr(tool, "ngan", 1)
@@ -162,7 +219,6 @@ def tool_transaction_create(request, tool_id):
             )
         else:
             messages.error(request, "Loại giao dịch không hợp lệ.")
-            # rollback kiểu “logic”: đánh fail luôn cho dễ nhìn
             tran.trang_thai = "FAILED"
             tran.ly_do_fail = "invalid_loai"
             tran.save(update_fields=["trang_thai", "ly_do_fail"])
@@ -171,7 +227,6 @@ def tool_transaction_create(request, tool_id):
         messages.success(request, "Đã gửi lệnh đến tủ. Đang chờ phản hồi...")
         return redirect("tool_muontra:tool_transaction_wait", tx_id=tran.tx_id)
 
-    # GET → hiện form
     context = {
         "tool": tool,
         "loai_choices": ToolTransaction.LOAI_CHOICES,
