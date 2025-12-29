@@ -40,11 +40,14 @@ INSTALLED_APPS = [
     'accounts',
     'khocongcu',
     'chatbot',
+    'lookup',
+    'fuzzy_reco',
     'holder',
     'tool',
     'holder_muontra',
     'tool_muontra',
     'iot_gateway',
+    #"chatbot_v2",
 ]
 
 MIDDLEWARE = [
@@ -135,3 +138,25 @@ LOGOUT_REDIRECT_URL = '/login/'
 # Gửi email reset password ra console (terminal) để test
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_FROM_EMAIL = "tms@example.com"  # tuỳ ý
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "tms": {
+            "format": "[{levelname}] {asctime} {name}: {message}",
+            "style": "{",
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "tms",
+        }
+    },
+    "loggers": {
+        "chatbot": {"handlers": ["console"], "level": "DEBUG"},
+        "lookup": {"handlers": ["console"], "level": "DEBUG"},
+        "fuzzy_reco": {"handlers": ["console"], "level": "DEBUG"},
+    },
+}

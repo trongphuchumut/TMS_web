@@ -1,392 +1,169 @@
-# chatbot/views.py
 import json
-import re
-import unicodedata
-from datetime import datetime
-
-from django.http import JsonResponse
+import time
+import uuid
+import logging
 from django.shortcuts import render
+
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .intents import detect_intent
-from .handlers_smalltalk import handle_smalltalk_faq
-from .handlers_search import handle_search_device, handle_search_confirm
-from .fuzzy.pipeline import run_fuzzy_suggest
-from .fuzzy.dialog import handle_fuzzy_followup, FUZZY_TTL_TURNS
+from .services.conversation.orchestrator import handle_message
+from .services.conversation.state import get_fuzzy_last_for_debug
 
-try:
-    from .models import FuzzyRunLog
-except Exception:
-    FuzzyRunLog = None
+logger = logging.getLogger("chatbot")
 
-
-# ================== CONFIG ==================
-MAX_HISTORY = 20  # cắt history để session không phình -> tránh mất state confirm
-
-
-# ================== Helpers ==================
-
-def normalize_vi(text: str) -> str:
-    if not text:
-        return ""
-    text = text.lower().strip()
-    text = unicodedata.normalize("NFD", text)
-    return "".join(c for c in text if unicodedata.category(c) != "Mn")
-
-
-def parse_yes_no(text: str) -> str | None:
-    t = normalize_vi(text).strip()
-    if t in ("dung", "yes", "y", "ok", "oke"):
-        return "yes"
-    if t in ("khong", "no", "n", "sai", "khong dung"):
-        return "no"
-    return None
-
-
-def is_why_question(text: str) -> bool:
-    t = normalize_vi(text)
-    return any(k in t for k in ("tai sao", "vi sao", "giai thich", "ly do", "why"))
-
-
-def push_history(session, role: str, content: str) -> list[dict]:
-    hist = session.get("chat_history", [])
-    hist.append({"role": role, "content": content})
-
-    if len(hist) > MAX_HISTORY:
-        hist = hist[-MAX_HISTORY:]
-
-    session["chat_history"] = hist
-    session.modified = True
-    return hist
-
-
-def recover_confirm_state_from_history(history: list[dict]) -> dict | None:
-    """
-    Fallback cực quan trọng:
-    Nếu session bị mất device_confirm_state, ta cố gắng parse từ câu bot hỏi confirm trước đó:
-    "Bạn đang hỏi về **tool DRL-HSS-07-GEN - ...** phải không?"
-    """
-    # tìm tin nhắn bot gần nhất có dạng confirm
-    for msg in reversed(history):
-        if msg.get("role") != "bot":
-            continue
-        text = msg.get("content") or ""
-
-        # match "**tool CODE -"
-        m = re.search(r"\*\*(tool|holder)\s+([A-Za-z0-9\-_\.]+)\s*-\s*", text)
-        if not m:
-            continue
-
-        typ_label = m.group(1).lower()       # tool | holder
-        code = m.group(2).strip()
-
-        # truy DB theo mã để lấy id + name
-        try:
-            if typ_label == "tool":
-                from tool.models import Tool
-                obj = Tool.objects.filter(ma_tool__iexact=code).first()
-                if not obj:
-                    return None
-                return {
-                    "type": "tool",
-                    "id": obj.id,
-                    "code": obj.ma_tool,
-                    "name": obj.ten_tool,
-                }
-
-            if typ_label == "holder":
-                from holder.models import Holder
-                obj = Holder.objects.filter(ma_noi_bo__iexact=code).first()
-                if not obj:
-                    return None
-                return {
-                    "type": "holder",
-                    "id": obj.id,
-                    "code": obj.ma_noi_bo,
-                    "name": obj.ten_thiet_bi,
-                }
-        except Exception:
-            return None
-
-    return None
-
-
-# ================== Fuzzy explain ==================
-
-def format_last_fuzzy_explain(session) -> str | None:
-    last = session.get("last_fuzzy")
-    if not last:
-        return None
-
-    top = last.get("top") or []
-    if not top:
-        return None
-
-    best = top[0]
-    lines = [
-        f"🔎 **Vì sao mình gợi ý `{best.get('name')}`?**",
-        f"- **Điểm fuzzy tổng:** {best.get('score')}/100",
-    ]
-
-    breakdown = best.get("breakdown") or {}
-    if breakdown:
-        lines.append("- **Đóng góp theo tiêu chí:**")
-        for k, v in sorted(breakdown.items(), key=lambda x: x[1], reverse=True):
-            lines.append(f"  - {k}: {round(v * 100)}%")
-
-    lines.append(
-        "\nBạn có thể bổ sung thêm vật liệu, loại gia công, "
-        "đường kính, chiều dài làm việc… để chấm chính xác hơn."
-    )
-    return "\n".join(lines)
-
-
-def store_last_fuzzy(request, user_text: str, result: dict):
-    top = []
-    for s, dev, br in (result.get("scored") or [])[:5]:
-        top.append({
-            "score": round(float(s) * 100, 1),
-            "name": getattr(dev, "ten_tool", None)
-                    or getattr(dev, "ten_thiet_bi", None)
-                    or str(dev),
-            "code": getattr(dev, "ma_tool", None)
-                    or getattr(dev, "ma_noi_bo", None)
-                    or "",
-            "breakdown": br,
-        })
-
-    plot = (result.get("meta") or {}).get("plot") or {}
-
-    request.session["last_fuzzy"] = {
-        "ts": datetime.now().isoformat(),
-        "question": user_text,
-        "criteria": result.get("criteria") or {},
-        "top": top,
-        "meta": {
-            **(result.get("meta") or {}),
-            "plot": plot,
-        },
-    }
-    request.session.modified = True
-
-    if FuzzyRunLog:
-        try:
-            FuzzyRunLog.objects.create(
-                user_text=user_text,
-                criteria_json=request.session["last_fuzzy"]["criteria"],
-                results_json=top,
-            )
-        except Exception:
-            pass
-
-
-# ================== MAIN VIEW ==================
 
 @csrf_exempt
-def chatbot_view(request):
+def chat_api(request):
+    """
+    Endpoint chính cho chatbot widget
+    POST /chatbot/
+    Payload:
+      {
+        message: string,
+        model: string,
+        explain_fuzzy: 0 | 1
+      }
+    """
+
+    rid = uuid.uuid4().hex[:8]   # request id ngắn cho dễ đọc log
+    t0 = time.perf_counter()
+
+    logger.debug("=" * 80)
+    logger.debug(f"[{rid}] CHATBOT REQUEST START")
+
     if request.method != "POST":
-        return JsonResponse({"reply": "Only POST"}, status=405)
+        logger.warning(f"[{rid}] Invalid method: {request.method}")
+        return JsonResponse({"reply": "POST only."}, status=405)
 
+    # ---------- Parse JSON ----------
     try:
-        data = json.loads(request.body or "{}")
-    except Exception:
-        return JsonResponse({"reply": "Body JSON không hợp lệ."}, status=400)
+        payload = json.loads(request.body or "{}")
+    except Exception as e:
+        logger.exception(f"[{rid}] JSON parse error")
+        return JsonResponse({"reply": "Payload JSON không hợp lệ."}, status=400)
 
-    user_message = (data.get("message") or "").strip()
-    model = (data.get("model") or "cloud").strip()
-    explain_fuzzy = bool(int(data.get("explain_fuzzy", 1)))
-    debug = bool(data.get("debug", False))
+    message = (payload.get("message") or "").strip()
+    model = (payload.get("model") or "gpt-oss:120b-cloud").strip()
+    explain_fuzzy = int(payload.get("explain_fuzzy") or 0)
 
-    if not user_message:
-        return JsonResponse({"reply": "Bạn nhập câu hỏi giúp mình nhé."})
+    logger.debug(f"[{rid}] Raw payload = {payload}")
+    logger.debug(f"[{rid}] message_len={len(message)} model='{model}' explain_fuzzy={explain_fuzzy}")
 
-    # ----- history -----
-    history = request.session.get("chat_history", [])
-    push_history(request.session, "user", user_message)
+    if not message:
+        logger.warning(f"[{rid}] Empty message")
+        return JsonResponse({"reply": "Bạn chưa nhập tin nhắn."}, status=400)
 
-    print("\n[CHATBOT] User:", user_message)
-
-    # =========================================================
-    # 1) SEARCH CONFIRM MODE (đúng / không) - CHỐT TRƯỚC detect_intent
-    # =========================================================
-    yn = parse_yes_no(user_message)
-    if yn:
-        search_state = request.session.get("device_confirm_state")
-
-        # nếu state bị mất (session phình) -> cố recover từ history
-        if not search_state:
-            recovered = recover_confirm_state_from_history(history)
-            if recovered:
-                request.session["device_confirm_state"] = recovered
-                request.session.modified = True
-                search_state = recovered
-
-        if search_state:
-            reply, done = handle_search_confirm(
-                request=request,
-                user_message=user_message,
-                state=search_state,
-                intent="confirm_yes" if yn == "yes" else "confirm_no",
-            )
-            if done:
-                request.session.pop("device_confirm_state", None)
-                request.session.modified = True
-
-            push_history(request.session, "bot", reply)
-            return JsonResponse({"reply": reply})
-
-        # user nói đúng/không nhưng không có state -> hướng dẫn nhẹ
-        reply = "Bạn đang xác nhận thiết bị nào vậy? Bạn gửi lại **mã tool/holder** (ví dụ DRL-HSS-07-GEN) giúp mình nhé."
-        push_history(request.session, "bot", reply)
-        return JsonResponse({"reply": reply})
-
-    # =========================================================
-    # 2) FUZZY FOLLOW-UP MODE
-    # =========================================================
-    fuzzy_state = request.session.get("fuzzy_state")
-    if fuzzy_state:
-        fuzzy_state["turns_left"] = int(fuzzy_state.get("turns_left", FUZZY_TTL_TURNS))
-        if fuzzy_state["turns_left"] <= 0:
-            request.session.pop("fuzzy_state", None)
-            request.session.modified = True
-        else:
-            print("[CHATBOT] Fuzzy follow-up ON. turns_left=", fuzzy_state["turns_left"])
-
-            # tương thích chữ ký hàm (phòng khi file dialog cũ)
-            try:
-                res = handle_fuzzy_followup(
-                    user_message,
-                    fuzzy_state,
-                    debug=debug,
-                    model=fuzzy_state.get("model") or model,
-                )
-            except TypeError:
-                res = handle_fuzzy_followup(user_message, fuzzy_state, debug=debug)
-
-            if res.get("status") == "need_more_info":
-                fuzzy_state["criteria"] = res.get("criteria") or fuzzy_state.get("criteria")
-                fuzzy_state["turns_left"] -= 1
-                request.session["fuzzy_state"] = fuzzy_state
-                request.session.modified = True
-
-            elif res.get("status") == "ok":
-                request.session.pop("fuzzy_state", None)
-                request.session.modified = True
-                store_last_fuzzy(
-                    request,
-                    fuzzy_state.get("description") or user_message,
-                    res,
-                )
-
-            reply = res.get("message", "Mình chưa xử lý được yêu cầu fuzzy.")
-            push_history(request.session, "bot", reply)
-            return JsonResponse({"reply": reply})
-
-    # =========================================================
-    # 3) WHY QUESTION (giải thích fuzzy)
-    # =========================================================
-    if is_why_question(user_message):
-        explain = format_last_fuzzy_explain(request.session)
-        if explain:
-            push_history(request.session, "bot", explain)
-            return JsonResponse({"reply": explain})
-
-    # =========================================================
-    # 4) DETECT INTENT
-    # =========================================================
-    intent, conf, reason = detect_intent(user_message, model=model)
-    print("[CHATBOT] intent:", intent, "conf:", conf, "reason:", reason)
-
-    # =========================================================
-    # 5) ROUTING
-    # =========================================================
-    if intent == "search_device":
-        reply = handle_search_device(request, user_message)
-
-    elif intent == "fuzzy_suggest":
-        try:
-            result = run_fuzzy_suggest(user_message, debug=debug, model=model)
-        except TypeError:
-            result = run_fuzzy_suggest(user_message, debug=debug)
-
-        reply = result.get("message", "Mình chưa xử lý được phần fuzzy.")
-
-        if result.get("status") == "need_more_info":
-            request.session["fuzzy_state"] = {
-                "description": user_message,
-                "criteria": result.get("criteria") or {},
-                "turns_left": FUZZY_TTL_TURNS,
-                "model": model,
-            }
-            request.session.modified = True
-
-        elif result.get("status") == "ok":
-            store_last_fuzzy(request, user_message, result)
-            if explain_fuzzy:
-                exp = format_last_fuzzy_explain(request.session)
-                if exp:
-                    reply += "\n\n" + exp
-
-    elif intent == "smalltalk_faq":
-        reply = handle_smalltalk_faq(user_message, history)
-
-    else:
-        reply = (
-            "Mình chưa chắc ý bạn 🤔\n"
-            "Bạn muốn **tìm thiết bị trong kho** hay **đề xuất theo fuzzy**?"
+    if len(message) > 2000:
+        logger.warning(f"[{rid}] Message too long ({len(message)} chars)")
+        return JsonResponse(
+            {"reply": "Tin nhắn quá dài, rút gọn dưới 2000 ký tự nhé."},
+            status=400,
         )
 
-    push_history(request.session, "bot", reply)
-    print("[CHATBOT] Reply:", reply[:140])
+    # ---------- Context cho orchestrator ----------
+    ctx = {
+        "model": model,
+        "explain_fuzzy": bool(explain_fuzzy),
+        "request_id": rid,   # truyền xuống để log xuyên suốt
+    }
+
+    # ---------- Handle message ----------
+    try:
+        logger.debug(f"[{rid}] Calling orchestrator.handle_message()")
+        result = handle_message(request, message, ctx)
+    except Exception:
+        logger.exception(f"[{rid}] ERROR in handle_message")
+        return JsonResponse(
+            {"reply": "Có lỗi nội bộ khi xử lý yêu cầu. Xem terminal để debug."},
+            status=500,
+        )
+
+    reply = result.get("reply", "OK")
+
+    # ---------- Timing ----------
+    dt_ms = (time.perf_counter() - t0) * 1000.0
+
+    logger.debug(f"[{rid}] Reply length = {len(reply)} chars")
+    logger.debug(f"[{rid}] Total time = {dt_ms:.2f} ms")
+    logger.debug(f"[{rid}] CHATBOT REQUEST END")
+    logger.debug("=" * 80)
+
     return JsonResponse({"reply": reply})
 
 
-# ================== DEMO PAGES ==================
+def fuzzy_last_view(request):
+    """
+    GET /chatbot/fuzzy/last/
+    - Default: render UI charts (fuzzy_last.html)
+    - ?raw=1 : return debug JSON as <pre>
+    """
+    logger.debug("[FUZZY_LAST] Request fuzzy last view")
 
-def fuzzy_last_page(request):
-    last = request.session.get("last_fuzzy")
+    data = get_fuzzy_last_for_debug(request)
+
+    if not data:
+        logger.debug("[FUZZY_LAST] No fuzzy data in session")
+        return HttpResponse(
+            "<h3>Chưa có fuzzy result gần nhất.</h3>"
+            "<p>Hãy chat một câu dạng đề xuất fuzzy trước "
+            "(vd: <b>'khá rẻ nhưng cần bền'</b>), rồi mở lại trang này.</p>"
+        )
+
+    logger.debug("[FUZZY_LAST] Fuzzy data keys = %s", list(data.keys()))
+
+    # Optional: keep old debug mode
+    if request.GET.get("raw") in ("1", "true", "yes"):
+        html = f"""
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Fuzzy Last (Debug)</title>
+          <style>
+            body {{
+              font-family: system-ui, Segoe UI, Arial;
+              padding: 24px;
+              background: #f8fafc;
+              color: #0f172a;
+            }}
+            .card {{
+              background: #ffffff;
+              border: 1px solid #e5e7eb;
+              border-radius: 16px;
+              padding: 16px;
+              max-width: 1000px;
+            }}
+            pre {{
+              background: #0b1220;
+              color: #e5e7eb;
+              padding: 12px;
+              border-radius: 12px;
+              overflow: auto;
+              font-size: 13px;
+              line-height: 1.4;
+            }}
+            .muted {{ color: #64748b; }}
+          </style>
+        </head>
+        <body>
+          <h2>Fuzzy gần nhất (Debug)</h2>
+          <p class="muted">Dữ liệu lấy từ session – dùng để kiểm tra parse, fuzzy engine, rules.</p>
+          <div class="card">
+            <pre>{json.dumps(data, ensure_ascii=False, indent=2)}</pre>
+          </div>
+        </body>
+        </html>
+        """
+        return HttpResponse(html)
+
+    # Render chart UI template
+    last_json = json.dumps(data, ensure_ascii=False)
+
     return render(
         request,
-        "fuzzy_last.html",
-        {"last": last, "last_json": json.dumps(last or {}, ensure_ascii=False)},
-    )
-
-
-# ================== FUZZY LAST PAGES ==================
-
-def fuzzy_last_page(request):
-    """
-    Render trang xem kết quả fuzzy gần nhất.
-    Template chuẩn dùng: {{ last_json|json_script:"lastFuzzy" }}
-    => last_json phải là dict (KHÔNG json.dumps).
-    """
-    last = request.session.get("last_fuzzy") or {}
-    return render(
-        request,
-        "fuzzy_last.html",
+        "fuzzy_last.html",     # đúng file template bạn đã làm
         {
-            "last": last,
-            "last_json": last,  # ✅ dict để json_script hoạt động đúng
-        },
+            "last": data,
+            "last_json": last_json,
+        }
     )
-
-
-def api_fuzzy_last(request):
-    """
-    JSON endpoint: trả về last_fuzzy trong session.
-    Dùng để debug nhanh và cho nút 'JSON last' trên UI.
-    """
-    last_json = request.session.get("last_fuzzy") or {}
-
-    plot = (last_json.get("meta") or {}).get("plot") or {}
-    criteria = (plot.get("criteria") or {}) if isinstance(plot, dict) else {}
-
-    print(
-        "[FUZZY][API_LAST] has_plot:",
-        bool(plot),
-        "criteria_keys:",
-        list(criteria.keys()) if isinstance(criteria, dict) else criteria
-    )
-
-    return JsonResponse(last_json)
-
